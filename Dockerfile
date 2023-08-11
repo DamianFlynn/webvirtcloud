@@ -32,7 +32,9 @@ RUN chown -R www-data:www-data /srv/webvirtcloud
 
 # Setup webvirtcloud
 WORKDIR /srv/webvirtcloud
-RUN python3 -m venv venv && \
+RUN ls -alt && \
+        cat conf/requirements.txt && \
+        python3 -m venv venv && \
 	. venv/bin/activate && \
 	pip3 install -U pip && \
 	pip3 install wheel && \
