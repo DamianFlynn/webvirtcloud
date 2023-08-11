@@ -1,57 +1,42 @@
 name: Publish Docker image
 
 on:
-  workflow_dispatch:
-  release:
-    types: [published]
+  push:
+    branches:
+      - master
 
 jobs:
-  push_to_registry:
-    name: Push Docker image to Docker Hub
+  Release_image:
     runs-on: ubuntu-latest
     steps:
-      -
-        name: Check out the repo
+      - name: Checkout 
         uses: actions/checkout@v3
-      -
-        name: Log in to Docker Hub
-        uses: docker/login-action@v2
+#      - name: do something to the code
+#        run: echo "Changed code" > text.txt
+      - id: docker-publish
+        name: Build image
+        uses: bitovi/github-actions-docker-publish@v1.0.7
         with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-      
-      - 
-        name: Extract metadata (tags, labels) for Docker
-        id: meta
-        uses: docker/metadata-action@v4
-        with:
-          images: madebug/webvirtcloud
-          tags: |
-            type=raw,value=latest
-            type=ref,event=tag
-      
-      - 
-        name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
-        
-      - 
-        name: ls files
-        run: |
-          ls -alt
-
-      - 
-        name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-      
-      - 
-        name: Build and push Docker image
-        uses: docker/build-push-action@v4
-        with:
-          context: .
-          platforms: linux/amd64,linux/arm64
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-            
+            # Checkout the repository
+            checkout: 'false'
+            # Tag to override default Logic
+            image_tag: latest
+            # Use the SHA for the tag.  Overrides the default logic.
+            use_sha: true# optional, default is false
+            # Docker org name.
+            org_name: madebug
+            # Name of the docker repository
+            repo_name: # optional, default is 
+            # Tag default branch with latest tag instead of branch name.
+            use_latest: # optional, default is true
+            # Docker user
+            docker_username: ${{ secrets.DOCKER_USERNAME }}
+            # Docker password
+            docker_password: ${{ secrets.DOCKER_TOKEN }}
+            # Add a string of values to the end of the build command
+            build_args: # optional
+            # Specify the working directory that the docker build will be run in
+            working-directory: .
+      - run: |
+          echo "Image Created:  ${{ env.image }}"
+          echo "Tag Created: ${{ env.tag }}"
