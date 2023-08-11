@@ -11,8 +11,9 @@ jobs:
     steps:
       - name: Checkout 
         uses: actions/checkout@v3
-#      - name: do something to the code
-#        run: echo "Changed code" > text.txt
+      - name: do something to the code
+        run: |
+          ls -alt .
       - id: docker-publish
         name: Build image
         uses: bitovi/github-actions-docker-publish@v1.0.7
