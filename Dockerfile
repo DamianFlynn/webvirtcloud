@@ -13,6 +13,9 @@ RUN apt-get update -qqy \
     && DEBIAN_FRONTEND=noninteractive apt-get -qyy install \
 	--no-install-recommends \
 	git \
+        sudo \
+	vim \ 
+        nano \
 	python3-venv \
 	python3-dev \
 	python3-lxml \
