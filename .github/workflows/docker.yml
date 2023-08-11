@@ -22,7 +22,7 @@ jobs:
             # Tag to override default Logic
             image_tag: latest
             # Use the SHA for the tag.  Overrides the default logic.
-            use_sha: true# optional, default is false
+            use_sha: true
             # Docker org name.
             org_name: madebug
             # Name of the docker repository
