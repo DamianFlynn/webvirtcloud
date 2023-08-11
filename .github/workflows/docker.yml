@@ -24,4 +24,4 @@ jobs:
           password: ${{ secrets.DOCKER_TOKEN }}
           registry: docker.io
           repository: madebug/webvirtcloud
-          tags: latest,$(date +%s)
+          tags: latest
