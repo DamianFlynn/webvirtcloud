@@ -45,15 +45,18 @@ RUN python3 -m venv venv && \
 
 RUN . venv/bin/activate && \
 	python3 manage.py makemigrations && \
-    python3 manage.py migrate && \
+        python3 manage.py migrate && \
 	python3 manage.py collectstatic --noinput && \
 	chown -R www-data:www-data /srv/webvirtcloud
 
 # Setup Nginx
 RUN printf "\n%s" "daemon off;" >> /etc/nginx/nginx.conf && \
 	rm /etc/nginx/sites-enabled/default && \
-	chown -R www-data:www-data /var/lib/nginx
-
+	chown -R www-data:www-data /var/lib/nginx && \
+        chown www-data -R ~www-data/.ssh/ && \
+	chown www-data /srv/webvirtcloud/db.sqlite3 && \
+        setuser www-data ssh-keygen -f ~www-data/.ssh/id_rsa -q -N "" 
+ 
 COPY conf/nginx/webvirtcloud.conf /etc/nginx/conf.d/
 
 # Register services to runit
