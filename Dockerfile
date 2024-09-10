@@ -53,7 +53,9 @@ RUN . venv/bin/activate && \
 RUN printf "\n%s" "daemon off;" >> /etc/nginx/nginx.conf && \
 	rm /etc/nginx/sites-enabled/default && \
 	chown -R www-data:www-data /var/lib/nginx && \
-        chown www-data -R ~www-data/.ssh/ 
+        chown www-data -R /home/www-data/.ssh/ && \
+	chown www-data /srv/webvirtcloud/db.sqlite3 && \
+        setuser www-data ssh-keygen -f /home/www-data/.ssh/id_rsa -q -N "" 
  
 COPY conf/nginx/webvirtcloud.conf /etc/nginx/conf.d/
 
