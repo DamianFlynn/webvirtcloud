@@ -52,7 +52,8 @@ RUN . venv/bin/activate && \
 # Setup Nginx
 RUN printf "\n%s" "daemon off;" >> /etc/nginx/nginx.conf && \
 	rm /etc/nginx/sites-enabled/default && \
-	chown -R www-data:www-data /var/lib/nginx 
+	chown -R www-data:www-data /var/lib/nginx && \
+        chown www-data -R ~www-data/.ssh/ 
  
 COPY conf/nginx/webvirtcloud.conf /etc/nginx/conf.d/
 
