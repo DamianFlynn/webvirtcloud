@@ -11,7 +11,7 @@ jobs:
     steps:
       - name: Checkout 
         uses: actions/checkout@v3
-      - name: do the job
+      - name: do the publish job
         run: |
           cp webvirtcloud/settings.py.template webvirtcloud/settings.py
           grep "SECRET_KEY" webvirtcloud/settings.py | awk -F\" '{print NF-1}'
