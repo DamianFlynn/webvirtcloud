@@ -34,7 +34,7 @@ COPY . /srv/webvirtcloud
 RUN cp /srv/webvirtcloud/webvirtcloud/settings.py.template /srv/webvirtcloud/webvirtcloud/settings.py && \
        SECRET=$(python3 /srv/webvirtcloud/conf/runit/secret_generator.py) && \
        sed -i "s|SECRET_KEY = \"\"|SECRET_KEY = \"$SECRET\"|" /srv/webvirtcloud/webvirtcloud/settings.py && \
-       cp /srv/webvirtcloud/conf/nginx/webvirtcloud.conf /etc/nginx/conf.d/ && \
+       cp /srv/webvirtcloud/conf/nginx/webvirtcloud.conf /etc/nginx/conf.d && \
        chown -R www-data:www-data /srv/webvirtcloud
 
 # Setup webvirtcloud
@@ -44,12 +44,14 @@ RUN python3 -m venv venv && \
 	pip3 install -U pip && \
 	pip3 install wheel && \
 	pip3 install -r conf/requirements.txt && \
-	pip3 cache purge
+	pip3 cache purge && \
+	chown -R www-data:www-data /srv/webvirtcloud
 
 RUN . venv/bin/activate && \
 	python3 manage.py makemigrations && \
         python3 manage.py migrate && \
-	python3 manage.py collectstatic --noinput
+	python3 manage.py collectstatic --noinput && \
+	chown -R www-data:www-data /srv/webvirtcloud
 
 # Setup Nginx
 RUN printf "\n%s" "daemon off;" >> /etc/nginx/nginx.conf && \
@@ -67,6 +69,7 @@ RUN <<EOF
 EOF
 
 RUN    chown www-data -R /home/www-data/.ssh/config
+COPY conf/nginx/webvirtcloud.conf /etc/nginx/conf.d/
 
 # Register services to runit
 RUN	mkdir /etc/service/nginx && \
