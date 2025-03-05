@@ -4,7 +4,7 @@ EXPOSE 80
 EXPOSE 6080
 
 # Use baseimage-docker's init system.
-CMD ["/sbin/my_init","/entrypoint.sh"]
+CMD ["/sbin/my_init"]
 
 
 RUN echo 'APT::Get::Clean=always;' >> /etc/apt/apt.conf.d/99AutomaticClean
@@ -64,8 +64,6 @@ RUN printf "\n%s" "daemon off;" >> /etc/nginx/nginx.conf && \
         setuser www-data ssh-keygen -f /home/www-data/.ssh/id_rsa -q -N ""
  
 COPY conf/nginx/webvirtcloud.conf /etc/nginx/conf.d/
-COPY entrypoint.sh /entrypoint.sh
-RUN  chmod +x /entrypoint.sh
 
 # Register services to runit
 RUN	mkdir /etc/service/nginx && \
