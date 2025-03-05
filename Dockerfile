@@ -44,14 +44,12 @@ RUN python3 -m venv venv && \
 	pip3 install -U pip && \
 	pip3 install wheel && \
 	pip3 install -r conf/requirements.txt && \
-	pip3 cache purge && \
-	chown -R www-data:www-data /srv/webvirtcloud
+	pip3 cache purge
 
 RUN . venv/bin/activate && \
 	python3 manage.py makemigrations && \
         python3 manage.py migrate && \
-	python3 manage.py collectstatic --noinput && \
-	chown -R www-data:www-data /srv/webvirtcloud
+	python3 manage.py collectstatic --noinput
 
 # Setup Nginx
 RUN printf "\n%s" "daemon off;" >> /etc/nginx/nginx.conf && \
@@ -62,8 +60,6 @@ RUN printf "\n%s" "daemon off;" >> /etc/nginx/nginx.conf && \
 	chown www-data:www-data /home/www-data/.ssh && \
 	chown www-data /srv/webvirtcloud/db.sqlite3 && \
         setuser www-data ssh-keygen -f /home/www-data/.ssh/id_rsa -q -N ""
- 
-COPY conf/nginx/webvirtcloud.conf /etc/nginx/conf.d/
 
 # Register services to runit
 RUN	mkdir /etc/service/nginx && \
