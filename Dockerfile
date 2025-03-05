@@ -56,7 +56,7 @@ RUN printf "\n%s" "daemon off;" >> /etc/nginx/nginx.conf && \
         mkdir -p /home/www-data && \
         chown www-data:www-data /home/www-data && \
 	chown www-data /srv/webvirtcloud/db.sqlite3 && \
-        setuser www-data && ssh-keygen -f /home/www-data/.ssh/id_rsa -q -N ""
+        setuser www-data ssh-keygen -f /home/www-data/.ssh/id_rsa -q -N ""
  
 COPY conf/nginx/webvirtcloud.conf /etc/nginx/conf.d/
 
