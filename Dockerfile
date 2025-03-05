@@ -4,7 +4,7 @@ EXPOSE 80
 EXPOSE 6080
 
 # Use baseimage-docker's init system.
-CMD ["/sbin/my_init"]
+CMD ["/sbin/my_init","/entrypoint.sh"]
 
 
 RUN echo 'APT::Get::Clean=always;' >> /etc/apt/apt.conf.d/99AutomaticClean
@@ -82,5 +82,3 @@ COPY conf/runit/webvirtcloud.sh		/etc/service/webvirtcloud/run
 #VOLUME []
 
 WORKDIR /srv/webvirtcloud
-
-ENTRYPOINT ["/entrypoint.sh"]
