@@ -32,8 +32,8 @@ RUN apt-get update -qqy \
 
 COPY . /srv/webvirtcloud
 RUN cp /srv/webvirtcloud/webvirtcloud/settings.py.template /srv/webvirtcloud/webvirtcloud/settings.py && \
-       SECRET=$(python3 conf/runit/secret_generator.py) && \
-       sed -i "s|SECRET_KEY = \"\"|SECRET_KEY = \"$SECRET\"|" webvirtcloud/settings.py && \
+       SECRET=$(python3 /srv/webvirtcloud/conf/runit/secret_generator.py) && \
+       sed -i "s|SECRET_KEY = \"\"|SECRET_KEY = \"$SECRET\"|" /srv/webvirtcloud/webvirtcloud/settings.py && \
        cp /srv/webvirtcloud/conf/nginx/webvirtcloud.conf /etc/nginx/conf.d && \
        chown -R www-data:www-data /srv/webvirtcloud
 
