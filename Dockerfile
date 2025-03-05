@@ -70,7 +70,8 @@ COPY entrypoint.sh /entrypoint.sh
 RUN	mkdir /etc/service/nginx && \
 	mkdir /etc/service/nginx-log-forwarder && \
 	mkdir /etc/service/webvirtcloud && \
-	mkdir /etc/service/novnc
+	mkdir /etc/service/novnc && \
+        RUN chmod +x /entrypoint.sh
 COPY conf/runit/nginx				/etc/service/nginx/run
 COPY conf/runit/nginx-log-forwarder	/etc/service/nginx-log-forwarder/run
 COPY conf/runit/novncd.sh			/etc/service/novnc/run
