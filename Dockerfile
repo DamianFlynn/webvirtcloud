@@ -64,8 +64,9 @@ RUN printf "\n%s" "daemon off;" >> /etc/nginx/nginx.conf && \
 RUN <<EOF
         echo "Host *" >> ~www-data/.ssh/config
         echo "StrictHostKeyChecking no" >> ~www-data/.ssh/config
-        EOF && \
-        chown www-data -R ~www-data/.ssh/config
+EOF
+
+RUN    chown www-data -R ~www-data/.ssh/config
 
 # Register services to runit
 RUN	mkdir /etc/service/nginx && \
