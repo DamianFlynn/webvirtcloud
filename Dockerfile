@@ -79,3 +79,5 @@ COPY conf/runit/webvirtcloud.sh		/etc/service/webvirtcloud/run
 #VOLUME []
 
 WORKDIR /srv/webvirtcloud
+
+ENTRYPOINT ["/entrypoint.sh"]
