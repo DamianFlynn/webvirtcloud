@@ -18,7 +18,6 @@ jobs:
           sed -i "s/SECRET_KEY \= \"\"/SECRET_KEY = \"$(python3 conf/runit/secret_generator.py)\"/" webvirtcloud/settings.py
           docker build . --file Dockerfile --tag webvirtcloud:$(date +%s)
           docker images
-          date
       - name: push
         uses: jerray/publish-docker-action@master
         with:
