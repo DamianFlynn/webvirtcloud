@@ -56,17 +56,17 @@ RUN printf "\n%s" "daemon off;" >> /etc/nginx/nginx.conf && \
 	rm /etc/nginx/sites-enabled/default && \
 	chown -R www-data:www-data /var/lib/nginx && \
         mkdir -p /home/www-data/.ssh && \
-        chown www-data:www-data ~www-data && \
-	chown www-data:www-data ~www-data/.ssh && \
+        chown www-data:www-data /home/www-data && \
+	chown www-data:www-data /home/www-data/.ssh && \
 	chown www-data /srv/webvirtcloud/db.sqlite3 && \
-        setuser www-data ssh-keygen -f ~www-data/.ssh/id_rsa -q -N ""
+        setuser www-data ssh-keygen -f /home/www-data/.ssh/id_rsa -q -N ""
 	
 RUN <<EOF
-        echo "Host *" >> ~www-data/.ssh/config
-        echo "StrictHostKeyChecking no" >> ~www-data/.ssh/config
+        echo "Host *" >> /home/www-data/.ssh/config
+        echo "StrictHostKeyChecking no" >> /home/www-data/.ssh/config
 EOF
 
-RUN    chown www-data -R ~www-data/.ssh/config
+RUN    chown www-data -R /home/www-data/.ssh/config
 
 # Register services to runit
 RUN	mkdir /etc/service/nginx && \
