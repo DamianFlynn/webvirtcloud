@@ -31,7 +31,11 @@ RUN apt-get update -qqy \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 COPY . /srv/webvirtcloud
-RUN chown -R www-data:www-data /srv/webvirtcloud
+RUN cp /srv/webvirtcloud/settings.py.template /srv/webvirtcloud/settings.py && \
+       SECRET=$(python3 conf/runit/secret_generator.py) && \
+       sed -i "s|SECRET_KEY = \"\"|SECRET_KEY = \"$SECRET\"|" webvirtcloud/settings.py && \
+       cp /srv/webvirtcloud/conf/nginx/webvirtcloud.conf /etc/nginx/conf.d && \
+       chown -R www-data:www-data /srv/webvirtcloud
 
 # Setup webvirtcloud
 WORKDIR /srv/webvirtcloud
