@@ -65,13 +65,14 @@ RUN printf "\n%s" "daemon off;" >> /etc/nginx/nginx.conf && \
  
 COPY conf/nginx/webvirtcloud.conf /etc/nginx/conf.d/
 COPY entrypoint.sh /entrypoint.sh
+RUN  chmod +x /entrypoint.sh
 
 # Register services to runit
 RUN	mkdir /etc/service/nginx && \
 	mkdir /etc/service/nginx-log-forwarder && \
 	mkdir /etc/service/webvirtcloud && \
-	mkdir /etc/service/novnc && \
-        RUN chmod +x /entrypoint.sh
+	mkdir /etc/service/novnc
+
 COPY conf/runit/nginx				/etc/service/nginx/run
 COPY conf/runit/nginx-log-forwarder	/etc/service/nginx-log-forwarder/run
 COPY conf/runit/novncd.sh			/etc/service/novnc/run
