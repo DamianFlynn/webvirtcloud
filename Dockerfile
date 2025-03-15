@@ -32,8 +32,8 @@ RUN cp /srv/webvirtcloud/webvirtcloud/settings.py.template /srv/webvirtcloud/web
     chown www-data -R ~www-data
     sudo -u www-data ssh-keygen -t ed25519
     echo -e "Host *\nStrictHostKeyChecking no" > ~www-data/.ssh/config && \
-    chown www-data -R ~www-data/.ssh/config
-    #chown -R www-data:www-data /srv/webvirtcloud /var/lib/nginx
+    chown www-data -R ~www-data/.ssh/config && \
+    chown -R www-data:www-data /srv/webvirtcloud /var/lib/nginx
     #setuser www-data ssh-keygen -f /home/www-data/.ssh/id_rsa -q -N ""
 
 # 合并 Nginx 配置和 SSH 配置
