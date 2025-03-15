@@ -47,7 +47,7 @@ RUN python3 -m venv venv && \
 	python3 manage.py collectstatic --noinput && \
 	chown -R www-data:www-data /srv/webvirtcloud
 
-# Setup Nginx
+# Setup Nginx and SSH
 RUN printf "\n%s" "daemon off;" >> /etc/nginx/nginx.conf && \
 	rm /etc/nginx/sites-enabled/default && \
 	chown -R www-data:www-data /var/lib/nginx && \
@@ -58,8 +58,3 @@ RUN printf "\n%s" "daemon off;" >> /etc/nginx/nginx.conf && \
         echo "Host *" > ~www-data/.ssh/config && \
         echo "StrictHostKeyChecking no" >> ~www-data/.ssh/config && \
         chown www-data -R ~www-data/.ssh/config
-
-# Define mountable directories.
-#VOLUME []
-
-WORKDIR /srv/webvirtcloud
