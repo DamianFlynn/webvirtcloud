@@ -29,9 +29,12 @@ RUN apt-get update -qqy \
 	libsasl2-modules \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-
 COPY . /srv/webvirtcloud
-RUN mkdir -p /etc/my_init.d && \
+RUN mkdir /etc/service/nginx && \
+       mkdir /etc/service/nginx-log-forwarder && \
+       mkdir /etc/service/webvirtcloud && \
+       mkdir /etc/service/novnc && \
+       mkdir -p /etc/my_init.d && \
        cp /srv/webvirtcloud/conf/runit/entrypoint.sh /etc/my_init.d/entrypoint.sh && \
        chmod +x /etc/my_init.d/entrypoint.sh && \ 
        cp /srv/webvirtcloud/webvirtcloud/settings.py.template /srv/webvirtcloud/webvirtcloud/settings.py && \
@@ -52,8 +55,7 @@ RUN python3 -m venv venv && \
 RUN . venv/bin/activate && \
 	python3 manage.py makemigrations && \
         python3 manage.py migrate && \
-	python3 manage.py collectstatic --noinput && \
-	chown -R www-data:www-data /srv/webvirtcloud
+	python3 manage.py collectstatic --noinput
 
 # Setup Nginx
 RUN printf "\n%s" "daemon off;" >> /etc/nginx/nginx.conf && \
@@ -74,10 +76,6 @@ RUN    chown www-data -R /home/www-data/.ssh/config
 COPY conf/nginx/webvirtcloud.conf /etc/nginx/conf.d/
 
 # Register services to runit
-RUN	mkdir /etc/service/nginx && \
-	mkdir /etc/service/nginx-log-forwarder && \
-	mkdir /etc/service/webvirtcloud && \
-	mkdir /etc/service/novnc
 
 COPY conf/runit/nginx				/etc/service/nginx/run
 COPY conf/runit/nginx-log-forwarder	/etc/service/nginx-log-forwarder/run
