@@ -45,7 +45,7 @@ RUN	mkdir /etc/service/nginx && \
 	mkdir /etc/service/nginx-log-forwarder && \
 	mkdir /etc/service/webvirtcloud && \
 	mkdir /etc/service/novnc && \
-    mkdir -p /etc/my_init.d && \
+        mkdir -p /etc/my_init.d
 
 COPY conf/runit/nginx				/etc/service/nginx/run
 COPY conf/runit/nginx-log-forwarder	/etc/service/nginx-log-forwarder/run
