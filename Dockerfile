@@ -34,6 +34,7 @@ COPY . /srv/webvirtcloud
 RUN cp /srv/webvirtcloud/webvirtcloud/settings.py.template /srv/webvirtcloud/webvirtcloud/settings.py && \
        SECRET=$(python3 /srv/webvirtcloud/conf/runit/secret_generator.py) && \
        sed -i "s|SECRET_KEY = \"\"|SECRET_KEY = \"$SECRET\"|" /srv/webvirtcloud/webvirtcloud/settings.py && \
+       sed -i "s|CSRF_TRUSTED_ORIGINS.*|CSRF_TRUSTED_ORIGINS = ['http://${CURRENT_IP}']|" /srv/webvirtcloud/webvirtcloud/settings.py
        cp /srv/webvirtcloud/conf/nginx/webvirtcloud.conf /etc/nginx/conf.d && \
        chown -R www-data:www-data /srv/webvirtcloud
 
@@ -81,9 +82,6 @@ COPY conf/runit/nginx				/etc/service/nginx/run
 COPY conf/runit/nginx-log-forwarder	/etc/service/nginx-log-forwarder/run
 COPY conf/runit/novncd.sh			/etc/service/novnc/run
 COPY conf/runit/webvirtcloud.sh		/etc/service/webvirtcloud/run
-COPY conf/runit/entrypoint.sh	/etc/service/entrypoint/run
-
-ENTRYPOINT ["sh /etc/service/entrypoint/run/entrypoint.sh"]
 
 # Define mountable directories.
 #VOLUME []
