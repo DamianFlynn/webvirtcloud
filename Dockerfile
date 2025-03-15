@@ -5,30 +5,14 @@ EXPOSE 80 6080
 # Use baseimage-docker's init system.
 CMD ["/sbin/my_init"]
 
-
-RUN echo 'APT::Get::Clean=always;' >> /etc/apt/apt.conf.d/99AutomaticClean
-
-RUN apt-get update -qqy \
-    && DEBIAN_FRONTEND=noninteractive apt-get -qyy install \
-	--no-install-recommends \
-	git \
-        sudo \
-	vim \ 
-        nano \
-	python3-venv \
-	python3-dev \
-	python3-lxml \
-	libvirt-dev \
-	zlib1g-dev \
-	nginx \
-	pkg-config \
-	gcc \
-	libldap2-dev \
-	libssl-dev \
-	libsasl2-dev \
-	libsasl2-modules \
-    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-
+RUN echo 'APT::Get::Clean=always;' >> /etc/apt/apt.conf.d/99AutomaticClean && \
+    apt-get update -qqy && \
+    DEBIAN_FRONTEND=noninteractive apt-get -qyy install --no-install-recommends \
+        git sudo vim nano python3-venv python3-dev python3-lxml libvirt-dev \
+        zlib1g-dev nginx pkg-config gcc libldap2-dev libssl-dev \
+        libsasl2-dev libsasl2-modules && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 COPY . /srv/webvirtcloud
 RUN mkdir /etc/service/nginx && \
@@ -46,8 +30,8 @@ RUN mkdir /etc/service/nginx && \
        SECRET=$(python3 /srv/webvirtcloud/conf/runit/secret_generator.py) && \
        sed -i "s|SECRET_KEY = \"\"|SECRET_KEY = \"$SECRET\"|" /srv/webvirtcloud/webvirtcloud/settings.py && \
        cp /srv/webvirtcloud/conf/nginx/webvirtcloud.conf /etc/nginx/conf.d && \
-       chown -R www-data:www-data /srv/webvirtcloud && \
-       chown www-data -R /home/www-data/.ssh/config
+       chown -R www-data:www-data /srv/webvirtcloud
+
 
 # Setup webvirtcloud
 WORKDIR /srv/webvirtcloud
@@ -80,6 +64,7 @@ RUN <<EOF
         echo "StrictHostKeyChecking no" >> /home/www-data/.ssh/config
 EOF
 
+RUN    chown www-data -R /home/www-data/.ssh/config
 
 # Define mountable directories.
 #VOLUME []
