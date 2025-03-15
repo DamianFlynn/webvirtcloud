@@ -31,7 +31,15 @@ RUN apt-get update -qqy \
 
 
 COPY . /srv/webvirtcloud
-RUN mkdir -p /etc/my_init.d && \
+RUN mkdir /etc/service/nginx && \
+       mkdir /etc/service/nginx-log-forwarder && \
+       mkdir /etc/service/webvirtcloud && \
+       mkdir /etc/service/novnc && \
+       mkdir -p /etc/my_init.d && \
+       cp /srv/webvirtcloud/conf/runit/nginx /etc/service/nginx/run && \
+       cp /srv/webvirtcloud/conf/runit/nginx-log-forwarder /etc/service/nginx-log-forwarder/run && \
+       cp /srv/webvirtcloud/conf/runit/webvirtcloud.sh /etc/service/webvirtcloud/run && \
+       cp /srv/webvirtcloud/conf/runit/novncd.sh /etc/service/novnc/run && \
        cp /srv/webvirtcloud/conf/runit/entrypoint.sh /etc/my_init.d/entrypoint.sh && \
        chmod +x /etc/my_init.d/entrypoint.sh && \ 
        cp /srv/webvirtcloud/webvirtcloud/settings.py.template /srv/webvirtcloud/webvirtcloud/settings.py && \
@@ -74,16 +82,6 @@ EOF
 RUN    chown www-data -R /home/www-data/.ssh/config
 COPY conf/nginx/webvirtcloud.conf /etc/nginx/conf.d/
 
-# Register services to runit
-RUN	mkdir /etc/service/nginx && \
-	mkdir /etc/service/nginx-log-forwarder && \
-	mkdir /etc/service/webvirtcloud && \
-	mkdir /etc/service/novnc
-
-COPY conf/runit/nginx				/etc/service/nginx/run
-COPY conf/runit/nginx-log-forwarder	/etc/service/nginx-log-forwarder/run
-COPY conf/runit/novncd.sh			/etc/service/novnc/run
-COPY conf/runit/webvirtcloud.sh		/etc/service/webvirtcloud/run
 
 # Define mountable directories.
 #VOLUME []
