@@ -22,6 +22,7 @@ RUN cp /srv/webvirtcloud/webvirtcloud/settings.py.template /srv/webvirtcloud/web
     SECRET=$(python3 /srv/webvirtcloud/conf/runit/secret_generator.py) && \
     sed -i "s|SECRET_KEY = \"\"|SECRET_KEY = \"$SECRET\"|" /srv/webvirtcloud/webvirtcloud/settings.py && \
     cp /srv/webvirtcloud/conf/nginx/webvirtcloud.conf /etc/nginx/conf.d && \
+    ls /srv/webvirtcloud/conf/ && \
     chown -R www-data:www-data /srv/webvirtcloud /var/lib/nginx && \
     python3 -m venv venv && \
     . venv/bin/activate && \
@@ -41,8 +42,10 @@ RUN cp /srv/webvirtcloud/webvirtcloud/settings.py.template /srv/webvirtcloud/web
 # 合并 Nginx 配置和 SSH 配置
 RUN printf "\n%s" "daemon off;" >> /etc/nginx/nginx.conf && \
     rm /etc/nginx/sites-enabled/default && \
-
+    chown -R www-data:www-data /var/lib/nginx && \
     chown www-data /srv/webvirtcloud/db.sqlite3
+
+COPY conf/nginx/webvirtcloud.conf               /etc/nginx/conf.d/
 
 # 合并服务注册和初始化脚本
 RUN	mkdir /etc/service/nginx && \
@@ -51,7 +54,6 @@ RUN	mkdir /etc/service/nginx && \
 	mkdir /etc/service/novnc && \
         mkdir -p /etc/my_init.d
 
-COPY conf/nginx/webvirtcloud.conf               /etc/nginx/conf.d/
 COPY conf/runit/nginx				/etc/service/nginx/run
 COPY conf/runit/nginx-log-forwarder	        /etc/service/nginx-log-forwarder/run
 COPY conf/runit/novncd.sh			/etc/service/novnc/run
