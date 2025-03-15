@@ -22,7 +22,6 @@ RUN cp /srv/webvirtcloud/webvirtcloud/settings.py.template /srv/webvirtcloud/web
     SECRET=$(python3 /srv/webvirtcloud/conf/runit/secret_generator.py) && \
     sed -i "s|SECRET_KEY = \"\"|SECRET_KEY = \"$SECRET\"|" /srv/webvirtcloud/webvirtcloud/settings.py && \
     cp /srv/webvirtcloud/conf/nginx/webvirtcloud.conf /etc/nginx/conf.d && \
-    usermod -a -G sudo www-data && \
     chown -R www-data:www-data /srv/webvirtcloud /var/lib/nginx && \
     python3 -m venv venv && \
     . venv/bin/activate && \
@@ -31,8 +30,9 @@ RUN cp /srv/webvirtcloud/webvirtcloud/settings.py.template /srv/webvirtcloud/web
     python3 manage.py makemigrations && \
     python3 manage.py migrate && \
     python3 manage.py collectstatic --noinput && \
-    #chown www-data -R ~www-data && \
-    setuser www-data ssh-keygen -q -N "" -f ~/.ssh/id_rsa && \
+    mkdir -p ~www-data/.ssh && \
+    chown www-data:www-data -R ~www-data && \
+    setuser www-data ssh-keygen -q -N "" -f ~www-data/.ssh/id_rsa && \
     ls -alt ~www-data/.ssh && \
     echo "Host *" > ~www-data/.ssh/config && \
     echo "StrictHostKeyChecking no" >> ~www-data/.ssh/config && \
