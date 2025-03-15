@@ -32,7 +32,8 @@ RUN cp /srv/webvirtcloud/webvirtcloud/settings.py.template /srv/webvirtcloud/web
     python3 manage.py migrate && \
     python3 manage.py collectstatic --noinput && \
     #chown www-data -R ~www-data && \
-    setuser www-data ssh-keygen -f ~www-data/.ssh/id_rsa -q -N ""  && \
+    setuser www-data ssh-keygen -q -N ""  && \
+    ls -alt ~www-data/.ssh && \
     echo "Host *" > ~www-data/.ssh/config && \
     echo "StrictHostKeyChecking no" >> ~www-data/.ssh/config && \
     chown www-data -R ~www-data/.ssh/config
