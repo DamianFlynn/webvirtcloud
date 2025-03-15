@@ -13,7 +13,7 @@ RUN echo 'APT::Get::Clean=always;' >> /etc/apt/apt.conf.d/99AutomaticClean && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-COPY . conf /srv/webvirtcloud
+COPY . /srv/webvirtcloud
 
 WORKDIR /srv/webvirtcloud
 
@@ -41,9 +41,16 @@ RUN printf "\n%s" "daemon off;" >> /etc/nginx/nginx.conf && \
     chown www-data /srv/webvirtcloud/db.sqlite3
 
 # 合并服务注册和初始化脚本
-RUN mkdir -p /etc/service/{nginx,nginx-log-forwarder,webvirtcloud,novnc} && \
-    cp /srv/webvirtcloud/conf/runit/{nginx,nginx-log-forwarder/run,novncd.sh,webvirtcloud.sh} /etc/service/ && \
+RUN	mkdir /etc/service/nginx && \
+	mkdir /etc/service/nginx-log-forwarder && \
+	mkdir /etc/service/webvirtcloud && \
+	mkdir /etc/service/novnc && \
     mkdir -p /etc/my_init.d && \
-    cp /srv/webvirtcloud/conf/runit/entrypoint.sh /etc/my_init.d/ && \
-    chmod +x /etc/my_init.d/entrypoint.sh
 
+COPY conf/runit/nginx				/etc/service/nginx/run
+COPY conf/runit/nginx-log-forwarder	/etc/service/nginx-log-forwarder/run
+COPY conf/runit/novncd.sh			/etc/service/novnc/run
+COPY conf/runit/webvirtcloud.sh		/etc/service/webvirtcloud/run
+COPY conf/runit/entrypoint.sh       /etc/my_init.d/entrypoint.sh
+
+RUN chmod +x /etc/my_init.d/entrypoint.sh
