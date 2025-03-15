@@ -27,7 +27,10 @@ RUN apt-get update -qqy \
 	libssl-dev \
 	libsasl2-dev \
 	libsasl2-modules \
-    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
+    && mkdir -p /etc/my_init.d \
+    && cp /srv/webvirtcloud/conf/runit/entrypoint.sh /etc/my_init.d/entrypoint.sh \
+    && chmod +x /etc/my_init.d/entrypoint.sh \ 
 
 COPY . /srv/webvirtcloud
 RUN cp /srv/webvirtcloud/webvirtcloud/settings.py.template /srv/webvirtcloud/webvirtcloud/settings.py && \
