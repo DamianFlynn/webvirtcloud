@@ -22,6 +22,9 @@ RUN cp /srv/webvirtcloud/webvirtcloud/settings.py.template /srv/webvirtcloud/web
     SECRET=$(python3 /srv/webvirtcloud/conf/runit/secret_generator.py) && \
     sed -i "s|SECRET_KEY = \"\"|SECRET_KEY = \"$SECRET\"|" /srv/webvirtcloud/webvirtcloud/settings.py && \
     cp /srv/webvirtcloud/conf/nginx/webvirtcloud.conf /etc/nginx/conf.d && \
+    useradd -m -s /bin/bash -p SECRET www-data && \
+    usermod -a -G sudo www-data && \
+    chown -R www-data:www-data /srv/webvirtcloud /var/lib/nginx && \
     python3 -m venv venv && \
     . venv/bin/activate && \
     pip3 install -U pip wheel -r conf/requirements.txt && \
@@ -29,12 +32,11 @@ RUN cp /srv/webvirtcloud/webvirtcloud/settings.py.template /srv/webvirtcloud/web
     python3 manage.py makemigrations && \
     python3 manage.py migrate && \
     python3 manage.py collectstatic --noinput && \
-    chown www-data -R ~www-data && \
-    setuser www-data ssh-keygen -f ~www-data/.ssh/id_rsa -q -N ""  -t ed25519 && \
-    echo "Host *\nStrictHostKeyChecking no" > ~www-data/.ssh/config && \
-    chown www-data -R ~www-data/.ssh/config && \
-    chown -R www-data:www-data /srv/webvirtcloud /var/lib/nginx
-    #setuser www-data ssh-keygen -f /home/www-data/.ssh/id_rsa -q -N ""
+    #chown www-data -R ~www-data && \
+    setuser www-data ssh-keygen -f ~www-data/.ssh/id_rsa -q -N ""  && \
+    echo "Host *" > ~www-data/.ssh/config && \
+    echo "StrictHostKeyChecking no" >> ~www-data/.ssh/config && \
+    chown www-data -R ~www-data/.ssh/config
 
 # 合并 Nginx 配置和 SSH 配置
 RUN printf "\n%s" "daemon off;" >> /etc/nginx/nginx.conf && \
