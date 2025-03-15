@@ -30,7 +30,7 @@ RUN cp /srv/webvirtcloud/webvirtcloud/settings.py.template /srv/webvirtcloud/web
     python3 manage.py migrate && \
     python3 manage.py collectstatic --noinput && \
     echo /root > /etc/container_environment/HOME && \
-    adduser www-data && \
+    useradd www-data && \
     chown -R www-data:www-data /srv/webvirtcloud /var/lib/nginx && \
     mkdir -p /home/www-data/.ssh && \
     chown www-data:www-data /home/www-data /home/www-data/.ssh && \
