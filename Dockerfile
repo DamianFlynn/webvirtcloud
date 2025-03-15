@@ -30,8 +30,16 @@ RUN mkdir /etc/service/nginx && \
        SECRET=$(python3 /srv/webvirtcloud/conf/runit/secret_generator.py) && \
        sed -i "s|SECRET_KEY = \"\"|SECRET_KEY = \"$SECRET\"|" /srv/webvirtcloud/webvirtcloud/settings.py && \
        cp /srv/webvirtcloud/conf/nginx/webvirtcloud.conf /etc/nginx/conf.d && \
-       chown -R www-data:www-data /srv/webvirtcloud
-
+       printf "\n%s" "daemon off;" >> /etc/nginx/nginx.conf && \
+       rm /etc/nginx/sites-enabled/default && \
+       chown -R www-data:www-data /var/lib/nginx && \
+       chown www-data /srv/webvirtcloud/db.sqlite3 && \
+       mkdir -p ~www-data/.ssh && \
+       chown www-data:www-data -R ~www-data && \
+       setuser www-data ssh-keygen -q -N "" -f ~www-data/.ssh/id_rsa && \
+       echo "Host *" > ~www-data/.ssh/config && \
+       echo "StrictHostKeyChecking no" >> ~www-data/.ssh/config && \
+       chown www-data -R ~www-data/.ssh/config
 
 # Setup webvirtcloud
 WORKDIR /srv/webvirtcloud
@@ -46,15 +54,3 @@ RUN python3 -m venv venv && \
         python3 manage.py migrate && \
 	python3 manage.py collectstatic --noinput && \
 	chown -R www-data:www-data /srv/webvirtcloud
-
-# Setup Nginx and SSH
-RUN printf "\n%s" "daemon off;" >> /etc/nginx/nginx.conf && \
-	rm /etc/nginx/sites-enabled/default && \
-	chown -R www-data:www-data /var/lib/nginx && \
-	chown www-data /srv/webvirtcloud/db.sqlite3 && \
-        mkdir -p ~www-data/.ssh && \
-        chown www-data:www-data -R ~www-data && \
-        setuser www-data ssh-keygen -q -N "" -f ~www-data/.ssh/id_rsa && \
-        echo "Host *" > ~www-data/.ssh/config && \
-        echo "StrictHostKeyChecking no" >> ~www-data/.ssh/config && \
-        chown www-data -R ~www-data/.ssh/config
