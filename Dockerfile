@@ -22,7 +22,7 @@ RUN cp /srv/webvirtcloud/webvirtcloud/settings.py.template /srv/webvirtcloud/web
     SECRET=$(python3 /srv/webvirtcloud/conf/runit/secret_generator.py) && \
     sed -i "s|SECRET_KEY = \"\"|SECRET_KEY = \"$SECRET\"|" /srv/webvirtcloud/webvirtcloud/settings.py && \
     cp /srv/webvirtcloud/conf/nginx/webvirtcloud.conf /etc/nginx/conf.d && \
-    useradd -m -s /bin/bash -p SECRET www-data && \
+    useradd -m -s /bin/bash -p $SECRET www-data && \
     usermod -a -G sudo www-data && \
     chown -R www-data:www-data /srv/webvirtcloud /var/lib/nginx && \
     python3 -m venv venv && \
