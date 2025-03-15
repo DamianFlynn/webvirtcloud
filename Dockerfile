@@ -5,6 +5,8 @@ EXPOSE 80 6080
 # Use baseimage-docker's init system.
 CMD ["/sbin/my_init"]
 
+COPY . /srv/webvirtcloud
+
 RUN echo 'APT::Get::Clean=always;' >> /etc/apt/apt.conf.d/99AutomaticClean && \
     apt-get update -qqy && \
     DEBIAN_FRONTEND=noninteractive apt-get -qyy install --no-install-recommends \
@@ -12,10 +14,8 @@ RUN echo 'APT::Get::Clean=always;' >> /etc/apt/apt.conf.d/99AutomaticClean && \
         zlib1g-dev nginx pkg-config gcc libldap2-dev libssl-dev \
         libsasl2-dev libsasl2-modules && \
     apt-get clean && \
-    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-
-COPY . /srv/webvirtcloud
-RUN mkdir /etc/service/nginx && \
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* && \
+       mkdir /etc/service/nginx && \
        mkdir /etc/service/nginx-log-forwarder && \
        mkdir /etc/service/webvirtcloud && \
        mkdir /etc/service/novnc && \
@@ -30,16 +30,7 @@ RUN mkdir /etc/service/nginx && \
        SECRET=$(python3 /srv/webvirtcloud/conf/runit/secret_generator.py) && \
        sed -i "s|SECRET_KEY = \"\"|SECRET_KEY = \"$SECRET\"|" /srv/webvirtcloud/webvirtcloud/settings.py && \
        cp /srv/webvirtcloud/conf/nginx/webvirtcloud.conf /etc/nginx/conf.d && \
-       printf "\n%s" "daemon off;" >> /etc/nginx/nginx.conf && \
-       rm /etc/nginx/sites-enabled/default && \
-       chown -R www-data:www-data /var/lib/nginx && \
-       chown www-data /srv/webvirtcloud/db.sqlite3 && \
-       mkdir -p ~www-data/.ssh && \
-       chown www-data:www-data -R ~www-data && \
-       setuser www-data ssh-keygen -q -N "" -f ~www-data/.ssh/id_rsa && \
-       echo "Host *" > ~www-data/.ssh/config && \
-       echo "StrictHostKeyChecking no" >> ~www-data/.ssh/config && \
-       chown www-data -R ~www-data/.ssh/config
+       chown -R www-data:www-data /srv/webvirtcloud
 
 # Setup webvirtcloud
 WORKDIR /srv/webvirtcloud
@@ -54,3 +45,15 @@ RUN python3 -m venv venv && \
         python3 manage.py migrate && \
 	python3 manage.py collectstatic --noinput && \
 	chown -R www-data:www-data /srv/webvirtcloud
+
+# Setup Nginx and SSH
+RUN printf "\n%s" "daemon off;" >> /etc/nginx/nginx.conf && \
+	rm /etc/nginx/sites-enabled/default && \
+	chown -R www-data:www-data /var/lib/nginx && \
+	chown www-data /srv/webvirtcloud/db.sqlite3 && \
+        mkdir -p ~www-data/.ssh && \
+        chown www-data:www-data -R ~www-data && \
+        setuser www-data ssh-keygen -q -N "" -f ~www-data/.ssh/id_rsa && \
+        echo "Host *" > ~www-data/.ssh/config && \
+        echo "StrictHostKeyChecking no" >> ~www-data/.ssh/config && \
+        chown www-data -R ~www-data/.ssh/config
