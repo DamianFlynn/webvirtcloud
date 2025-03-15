@@ -51,10 +51,11 @@ RUN	mkdir /etc/service/nginx && \
 	mkdir /etc/service/novnc && \
         mkdir -p /etc/my_init.d
 
+COPY conf/nginx/webvirtcloud.conf               /etc/nginx/conf.d/
 COPY conf/runit/nginx				/etc/service/nginx/run
-COPY conf/runit/nginx-log-forwarder	/etc/service/nginx-log-forwarder/run
+COPY conf/runit/nginx-log-forwarder	        /etc/service/nginx-log-forwarder/run
 COPY conf/runit/novncd.sh			/etc/service/novnc/run
-COPY conf/runit/webvirtcloud.sh		/etc/service/webvirtcloud/run
-COPY conf/runit/entrypoint.sh       /etc/my_init.d/entrypoint.sh
+COPY conf/runit/webvirtcloud.sh		        /etc/service/webvirtcloud/run
+COPY conf/runit/entrypoint.sh                   /etc/my_init.d/entrypoint.sh
 
 RUN chmod +x /etc/my_init.d/entrypoint.sh
