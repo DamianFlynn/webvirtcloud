@@ -31,7 +31,7 @@ RUN cp /srv/webvirtcloud/webvirtcloud/settings.py.template /srv/webvirtcloud/web
     python3 manage.py collectstatic --noinput && \
     chown www-data -R ~www-data && \
     setuser www-data ssh-keygen -f ~www-data/.ssh/id_rsa -q -N ""  -t ed25519 && \
-    echo -e "Host *\nStrictHostKeyChecking no" > ~www-data/.ssh/config && \
+    echo "Host *\nStrictHostKeyChecking no" > ~www-data/.ssh/config && \
     chown www-data -R ~www-data/.ssh/config && \
     chown -R www-data:www-data /srv/webvirtcloud /var/lib/nginx
     #setuser www-data ssh-keygen -f /home/www-data/.ssh/id_rsa -q -N ""
