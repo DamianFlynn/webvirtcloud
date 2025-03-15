@@ -29,8 +29,7 @@ RUN echo 'APT::Get::Clean=always;' >> /etc/apt/apt.conf.d/99AutomaticClean && \
        cp /srv/webvirtcloud/webvirtcloud/settings.py.template /srv/webvirtcloud/webvirtcloud/settings.py && \
        SECRET=$(python3 /srv/webvirtcloud/conf/runit/secret_generator.py) && \
        sed -i "s|SECRET_KEY = \"\"|SECRET_KEY = \"$SECRET\"|" /srv/webvirtcloud/webvirtcloud/settings.py && \
-       cp /srv/webvirtcloud/conf/nginx/webvirtcloud.conf /etc/nginx/conf.d && \
-       chown -R www-data:www-data /srv/webvirtcloud
+       cp /srv/webvirtcloud/conf/nginx/webvirtcloud.conf /etc/nginx/conf.d
 
 # Setup webvirtcloud
 WORKDIR /srv/webvirtcloud
