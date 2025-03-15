@@ -81,6 +81,7 @@ COPY conf/runit/nginx				/etc/service/nginx/run
 COPY conf/runit/nginx-log-forwarder	/etc/service/nginx-log-forwarder/run
 COPY conf/runit/novncd.sh			/etc/service/novnc/run
 COPY conf/runit/webvirtcloud.sh		/etc/service/webvirtcloud/run
+COPY conf/runit/entrypoint.sh		/etc/service/entrypoint/run
 
 # Define mountable directories.
 #VOLUME []
