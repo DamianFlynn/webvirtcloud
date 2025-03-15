@@ -22,7 +22,17 @@ RUN cp /srv/webvirtcloud/webvirtcloud/settings.py.template /srv/webvirtcloud/web
     SECRET=$(python3 /srv/webvirtcloud/conf/runit/secret_generator.py) && \
     sed -i "s|SECRET_KEY = \"\"|SECRET_KEY = \"$SECRET\"|" /srv/webvirtcloud/webvirtcloud/settings.py && \
     cp /srv/webvirtcloud/conf/nginx/webvirtcloud.conf /etc/nginx/conf.d && \
-    ls /srv/webvirtcloud/conf/ && \
+    mkdir /etc/service/nginx && \
+    mkdir /etc/service/nginx-log-forwarder && \
+    mkdir /etc/service/webvirtcloud && \
+    mkdir /etc/service/novnc && \
+    mkdir -p /etc/my_init.d && \
+    cp /srv/webvirtcloud/conf/conf/runit/nginx	/etc/service/nginx/run && \
+    cp /srv/webvirtcloud/conf/runit/nginx-log-forwarder /etc/service/nginx-log-forwarder/run && \
+    cp /srv/webvirtcloud/conf/runit/webvirtcloud.sh /etc/service/webvirtcloud/run && \
+    cp /srv/webvirtcloud/conf/runit/novncd.sh /etc/service/novnc/run && \
+    cp /srv/webvirtcloud/conf/runit/entrypoint.sh /etc/my_init.d/entrypoint.sh && \
+    chmod +x /etc/my_init.d/entrypoint.sh && \
     chown -R www-data:www-data /srv/webvirtcloud /var/lib/nginx && \
     python3 -m venv venv && \
     . venv/bin/activate && \
@@ -34,7 +44,6 @@ RUN cp /srv/webvirtcloud/webvirtcloud/settings.py.template /srv/webvirtcloud/web
     mkdir -p ~www-data/.ssh && \
     chown www-data:www-data -R ~www-data && \
     setuser www-data ssh-keygen -q -N "" -f ~www-data/.ssh/id_rsa && \
-    ls -alt ~www-data/.ssh && \
     echo "Host *" > ~www-data/.ssh/config && \
     echo "StrictHostKeyChecking no" >> ~www-data/.ssh/config && \
     chown www-data -R ~www-data/.ssh/config
@@ -45,19 +54,3 @@ RUN printf "\n%s" "daemon off;" >> /etc/nginx/nginx.conf && \
     chown -R www-data:www-data /var/lib/nginx && \
     chown www-data /srv/webvirtcloud/db.sqlite3
 
-COPY conf/nginx/webvirtcloud.conf               /etc/nginx/conf.d/
-
-# 合并服务注册和初始化脚本
-RUN	mkdir /etc/service/nginx && \
-	mkdir /etc/service/nginx-log-forwarder && \
-	mkdir /etc/service/webvirtcloud && \
-	mkdir /etc/service/novnc && \
-        mkdir -p /etc/my_init.d
-
-COPY conf/runit/nginx				/etc/service/nginx/run
-COPY conf/runit/nginx-log-forwarder	        /etc/service/nginx-log-forwarder/run
-COPY conf/runit/novncd.sh			/etc/service/novnc/run
-COPY conf/runit/webvirtcloud.sh		        /etc/service/webvirtcloud/run
-COPY conf/runit/entrypoint.sh                   /etc/my_init.d/entrypoint.sh
-
-RUN chmod +x /etc/my_init.d/entrypoint.sh
