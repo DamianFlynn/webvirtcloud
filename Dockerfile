@@ -14,6 +14,7 @@ RUN echo 'APT::Get::Clean=always;' >> /etc/apt/apt.conf.d/99AutomaticClean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 COPY . /srv/webvirtcloud
+WORKDIR /srv/webvirtcloud
 
 # 合并 Python 虚拟环境构建和依赖安装
 RUN cp /srv/webvirtcloud/webvirtcloud/settings.py.template /srv/webvirtcloud/webvirtcloud/settings.py && \
@@ -44,5 +45,3 @@ RUN mkdir -p /etc/service/{nginx,nginx-log-forwarder,webvirtcloud,novnc} && \
     mkdir -p /etc/my_init.d && \
     cp conf/runit/entrypoint.sh /etc/my_init.d/ && \
     chmod +x /etc/my_init.d/entrypoint.sh
-
-WORKDIR /srv/webvirtcloud
