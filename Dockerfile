@@ -13,9 +13,9 @@ RUN echo 'APT::Get::Clean=always;' >> /etc/apt/apt.conf.d/99AutomaticClean && \
         git sudo vim nano python3-venv python3-dev python3-lxml libvirt-dev \
         zlib1g-dev nginx pkg-config gcc libldap2-dev libssl-dev \
         libsasl2-dev libsasl2-modules && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* && \
-       mkdir /etc/service/nginx && \
+        apt-get clean && \
+        rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* && \
+    mkdir /etc/service/nginx && \
        mkdir /etc/service/nginx-log-forwarder && \
        mkdir /etc/service/webvirtcloud && \
        mkdir /etc/service/novnc && \
@@ -43,10 +43,8 @@ RUN python3 -m venv venv && \
 	python3 manage.py makemigrations && \
         python3 manage.py migrate && \
 	python3 manage.py collectstatic --noinput && \
-	chown -R www-data:www-data /srv/webvirtcloud
-
-# Setup Nginx and SSH
-RUN printf "\n%s" "daemon off;" >> /etc/nginx/nginx.conf && \
+	chown -R www-data:www-data /srv/webvirtcloud && \
+    printf "\n%s" "daemon off;" >> /etc/nginx/nginx.conf && \
 	rm /etc/nginx/sites-enabled/default && \
 	chown -R www-data:www-data /var/lib/nginx && \
 	chown www-data /srv/webvirtcloud/db.sqlite3 && \
