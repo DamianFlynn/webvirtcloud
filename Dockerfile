@@ -29,8 +29,8 @@ RUN cp /srv/webvirtcloud/webvirtcloud/settings.py.template /srv/webvirtcloud/web
     python3 manage.py makemigrations && \
     python3 manage.py migrate && \
     python3 manage.py collectstatic --noinput && \
-    chown www-data -R ~www-data
-    sudo -u www-data ssh-keygen -t ed25519
+    chown www-data -R ~www-data && \
+    sudo -u www-data ssh-keygen -t ed25519 && \
     echo -e "Host *\nStrictHostKeyChecking no" > ~www-data/.ssh/config && \
     chown www-data -R ~www-data/.ssh/config && \
     chown -R www-data:www-data /srv/webvirtcloud /var/lib/nginx
