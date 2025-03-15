@@ -46,3 +46,4 @@ RUN mkdir -p /etc/service/{nginx,nginx-log-forwarder,webvirtcloud,novnc} && \
     mkdir -p /etc/my_init.d && \
     cp /srv/webvirtcloud/conf/runit/entrypoint.sh /etc/my_init.d/ && \
     chmod +x /etc/my_init.d/entrypoint.sh
+
