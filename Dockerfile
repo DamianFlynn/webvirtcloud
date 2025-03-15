@@ -14,6 +14,7 @@ RUN echo 'APT::Get::Clean=always;' >> /etc/apt/apt.conf.d/99AutomaticClean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 COPY . /srv/webvirtcloud
+COPY conf /srv/webvirtcloud
 WORKDIR /srv/webvirtcloud
 
 # 合并 Python 虚拟环境构建和依赖安装
