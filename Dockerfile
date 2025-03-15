@@ -46,7 +46,8 @@ RUN mkdir /etc/service/nginx && \
        SECRET=$(python3 /srv/webvirtcloud/conf/runit/secret_generator.py) && \
        sed -i "s|SECRET_KEY = \"\"|SECRET_KEY = \"$SECRET\"|" /srv/webvirtcloud/webvirtcloud/settings.py && \
        cp /srv/webvirtcloud/conf/nginx/webvirtcloud.conf /etc/nginx/conf.d && \
-       chown -R www-data:www-data /srv/webvirtcloud
+       chown -R www-data:www-data /srv/webvirtcloud && \
+       chown www-data -R /home/www-data/.ssh/config
 
 # Setup webvirtcloud
 WORKDIR /srv/webvirtcloud
@@ -78,9 +79,6 @@ RUN <<EOF
         echo "Host *" >> /home/www-data/.ssh/config
         echo "StrictHostKeyChecking no" >> /home/www-data/.ssh/config
 EOF
-
-RUN    chown www-data -R /home/www-data/.ssh/config
-COPY conf/nginx/webvirtcloud.conf /etc/nginx/conf.d/
 
 
 # Define mountable directories.
