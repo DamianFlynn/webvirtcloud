@@ -42,10 +42,7 @@ RUN printf "\n%s" "daemon off;" >> /etc/nginx/nginx.conf && \
 
 # 合并服务注册和初始化脚本
 RUN mkdir -p /etc/service/{nginx,nginx-log-forwarder,webvirtcloud,novnc} && \
-    ls && \
     ls /srv/webvirtcloud && \
-    tree -L 9 $PWD && \
-    pwd && \
     cp conf/runit/{nginx,nginx-log-forwarder/run,novncd.sh,webvirtcloud.sh} /etc/service/ && \
     mkdir -p /etc/my_init.d && \
     cp conf/runit/entrypoint.sh /etc/my_init.d/ && \
