@@ -29,12 +29,9 @@ RUN apt-get update -qqy \
 	libsasl2-modules \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
+
 COPY . /srv/webvirtcloud
-RUN mkdir /etc/service/nginx && \
-       mkdir /etc/service/nginx-log-forwarder && \
-       mkdir /etc/service/webvirtcloud && \
-       mkdir /etc/service/novnc && \
-       mkdir -p /etc/my_init.d && \
+RUN mkdir -p /etc/my_init.d && \
        cp /srv/webvirtcloud/conf/runit/entrypoint.sh /etc/my_init.d/entrypoint.sh && \
        chmod +x /etc/my_init.d/entrypoint.sh && \ 
        cp /srv/webvirtcloud/webvirtcloud/settings.py.template /srv/webvirtcloud/webvirtcloud/settings.py && \
@@ -50,12 +47,14 @@ RUN python3 -m venv venv && \
 	pip3 install -U pip && \
 	pip3 install wheel && \
 	pip3 install -r conf/requirements.txt && \
-	pip3 cache purge
+	pip3 cache purge && \
+	chown -R www-data:www-data /srv/webvirtcloud
 
 RUN . venv/bin/activate && \
 	python3 manage.py makemigrations && \
         python3 manage.py migrate && \
-	python3 manage.py collectstatic --noinput
+	python3 manage.py collectstatic --noinput && \
+	chown -R www-data:www-data /srv/webvirtcloud
 
 # Setup Nginx
 RUN printf "\n%s" "daemon off;" >> /etc/nginx/nginx.conf && \
@@ -66,7 +65,7 @@ RUN printf "\n%s" "daemon off;" >> /etc/nginx/nginx.conf && \
 	chown www-data:www-data /home/www-data/.ssh && \
 	chown www-data /srv/webvirtcloud/db.sqlite3 && \
         setuser www-data ssh-keygen -f /home/www-data/.ssh/id_rsa -q -N ""
-	
+
 RUN <<EOF
         echo "Host *" >> /home/www-data/.ssh/config
         echo "StrictHostKeyChecking no" >> /home/www-data/.ssh/config
@@ -76,6 +75,10 @@ RUN    chown www-data -R /home/www-data/.ssh/config
 COPY conf/nginx/webvirtcloud.conf /etc/nginx/conf.d/
 
 # Register services to runit
+RUN	mkdir /etc/service/nginx && \
+	mkdir /etc/service/nginx-log-forwarder && \
+	mkdir /etc/service/webvirtcloud && \
+	mkdir /etc/service/novnc
 
 COPY conf/runit/nginx				/etc/service/nginx/run
 COPY conf/runit/nginx-log-forwarder	/etc/service/nginx-log-forwarder/run
