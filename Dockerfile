@@ -27,7 +27,7 @@ RUN cp /srv/webvirtcloud/webvirtcloud/settings.py.template /srv/webvirtcloud/web
     mkdir /etc/service/webvirtcloud && \
     mkdir /etc/service/novnc && \
     mkdir -p /etc/my_init.d && \
-    cp /srv/webvirtcloud/conf/conf/runit/nginx	/etc/service/nginx/run && \
+    cp /srv/webvirtcloud/conf/runit/nginx /etc/service/nginx/run && \
     cp /srv/webvirtcloud/conf/runit/nginx-log-forwarder /etc/service/nginx-log-forwarder/run && \
     cp /srv/webvirtcloud/conf/runit/webvirtcloud.sh /etc/service/webvirtcloud/run && \
     cp /srv/webvirtcloud/conf/runit/novncd.sh /etc/service/novnc/run && \
