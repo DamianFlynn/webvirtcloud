@@ -27,13 +27,14 @@ RUN apt-get update -qqy \
 	libssl-dev \
 	libsasl2-dev \
 	libsasl2-modules \
-    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
-    && mkdir -p /etc/my_init.d \
-    && cp /srv/webvirtcloud/conf/runit/entrypoint.sh /etc/my_init.d/entrypoint.sh \
-    && chmod +x /etc/my_init.d/entrypoint.sh \ 
+    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
 
 COPY . /srv/webvirtcloud
-RUN cp /srv/webvirtcloud/webvirtcloud/settings.py.template /srv/webvirtcloud/webvirtcloud/settings.py && \
+RUN mkdir -p /etc/my_init.d && \
+       cp /srv/webvirtcloud/conf/runit/entrypoint.sh /etc/my_init.d/entrypoint.sh && \
+       chmod +x /etc/my_init.d/entrypoint.sh && \ 
+       cp /srv/webvirtcloud/webvirtcloud/settings.py.template /srv/webvirtcloud/webvirtcloud/settings.py && \
        SECRET=$(python3 /srv/webvirtcloud/conf/runit/secret_generator.py) && \
        sed -i "s|SECRET_KEY = \"\"|SECRET_KEY = \"$SECRET\"|" /srv/webvirtcloud/webvirtcloud/settings.py && \
        cp /srv/webvirtcloud/conf/nginx/webvirtcloud.conf /etc/nginx/conf.d && \
