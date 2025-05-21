@@ -1,4 +1,4 @@
-FROM phusion/baseimage:jammy-1.0.1
+FROM phusion/baseimage:noble-1.0.2
 
 # docker run -dit -e CURRENT_IP=$(curl -4 ifconfig.me) -p 80:80 -p 6080:6080 --name webvirtcloud madebug/webvirtcloud:latest 
 # docker exec -it webvirtcloud  sudo -u www-data ssh-copy-id root@x.x.x.x
