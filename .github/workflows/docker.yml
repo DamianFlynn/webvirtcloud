@@ -11,18 +11,80 @@ jobs:
     steps:
       - name: Checkout 
         uses: actions/checkout@v3
-      - name: do the publish job
+
+      - name: Prepare Secret Key
         run: |
           cp webvirtcloud/settings.py.template webvirtcloud/settings.py
           grep "SECRET_KEY" webvirtcloud/settings.py | awk -F\" '{print NF-1}'
           sed -i "s/SECRET_KEY \= \"\"/SECRET_KEY = \"$(python3 conf/runit/secret_generator.py)\"/" webvirtcloud/settings.py
-          docker build . --file Dockerfile --tag webvirtcloud:$(date +%s)
-          docker images
-      - name: push
-        uses: jerray/publish-docker-action@master
+          # docker build . --file Dockerfile --tag webvirtcloud:$(date +%s)
+          # docker images
+      
+      # Workaround: https://github.com/docker/build-push-action/issues/461
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2.1.0
+
+      # Workaround: https://github.com/docker/build-push-action/issues/461
+      - name: Setup Docker buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v2.5.0
+      
+      - name: Available platforms
+        run: echo ${{ steps.buildx.outputs.platforms }}
+
+      # Login against a Docker registry except on PR
+      # https://github.com/docker/login-action
+      - name: Log into registry ${{ env.REGISTRY }}
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v2.1.0
         with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_TOKEN }}
-          registry: docker.io
-          repository: madebug/webvirtcloud
-          tags: latest
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # this is a simple way of using date and time to do versioning.
+      - name: Modify scripts and get version
+        id: version
+        run: |
+          output=$(date -u '+%Y%m%d%H%M%S')
+          echo ::set-output name=date_version::$output
+
+      # Extract metadata (tags, labels) for Docker
+      # https://github.com/docker/metadata-action
+      - name: Extract Docker metadata
+        id: docker_meta
+        uses: docker/metadata-action@v4.4.0
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: type=sha,format=long
+       
+      - name: downcase REPO
+        run: |
+          echo "REPO=${GITHUB_REPOSITORY,,}" >>${GITHUB_ENV}
+
+      # Build and push Docker image with Buildx (don't push on PR)
+      # https://github.com/docker/build-push-action
+      - name: Build and Push container images
+        id: build-and-push
+        uses: docker/build-push-action@v4.1.1
+        with:
+          context: .
+          push: ${{ github.event_name != 'pull_request' }} # Don't push on PR
+          labels: ${{ steps.docker_meta.outputs.tags }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          file: ./Dockerfile
+          platforms: linux/amd64,linux/arm64 #,linux/arm/v7
+          tags: |
+            ${{ steps.docker_meta.outputs.tags }}
+            ghcr.io/${{env.REPO}}:latest
+            ghcr.io/${{env.REPO}}:${{steps.version.outputs.date_version}}
+
+      # - name: push
+      #   uses: jerray/publish-docker-action@master
+      #   with:
+      #     username: ${{ secrets.DOCKER_USERNAME }}
+      #     password: ${{ secrets.DOCKER_TOKEN }}
+      #     registry: docker.io
+      #     repository: madebug/webvirtcloud
+      #     tags: latest
