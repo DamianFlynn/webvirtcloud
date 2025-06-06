@@ -62,6 +62,18 @@ else
     echo "Existing SSH key found, skipping key generation"
 fi
 
+# Fix logging permissions - Create log file with proper ownership
+echo "Setting up logging permissions..."
+touch /srv/webvirtcloud/webvirtcloud.log
+chown www-data:www-data /srv/webvirtcloud/webvirtcloud.log
+chmod 664 /srv/webvirtcloud/webvirtcloud.log
+
+# Ensure the logs directory in mounted volume has proper permissions
+if [ -d "/var/log" ]; then
+    chown -R www-data:www-data /var/log/webvirtcloud* 2>/dev/null || true
+    chmod -R 664 /var/log/webvirtcloud* 2>/dev/null || true
+fi
+
 # Handle CSRF Trusted Origins with support for HTTPS domains
 if [ -n "$CURRENT_IP" ]; then
     echo "Configuring CSRF trusted origins for: $CURRENT_IP"

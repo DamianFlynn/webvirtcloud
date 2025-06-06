@@ -298,6 +298,7 @@ echo "Setting up WebVirtCloud persistent storage..."
 
 # Create all required directories
 sudo mkdir -p "${DATA_DIR}"/{database,static,ssh,logs}
+sudo mkdir -p "${DATA_DIR}"/logs/nginx
 
 # Set proper ownership (www-data UID:GID = 33:33)
 sudo chown -R root:root "${DATA_DIR}"
