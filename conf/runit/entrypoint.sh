@@ -31,29 +31,36 @@ fi
 # SSH Key Management - Only generate if keys don't exist
 if [ ! -f /var/www/.ssh/id_rsa ]; then
     echo "No existing SSH key found, generating new keypair..."
-    mkdir -p /var/www/.ssh
     
-    # Generate SSH key as www-data user
-    sudo -u www-data ssh-keygen -q -N "" -f /var/www/.ssh/id_rsa
+    # Ensure directory exists and has proper permissions
+    sudo mkdir -p /var/www/.ssh
+    sudo chown www-data:www-data /var/www/.ssh
+    sudo chmod 700 /var/www/.ssh
     
-    # Create SSH config
-    cat > /var/www/.ssh/config << 'EOF'
+    # Generate SSH key as www-data user with proper permissions
+    if sudo -u www-data ssh-keygen -q -N "" -f /var/www/.ssh/id_rsa; then
+        # Create SSH config
+        cat > /var/www/.ssh/config << 'EOF'
 Host *
     StrictHostKeyChecking no
     UserKnownHostsFile /dev/null
     LogLevel QUIET
 EOF
-    
-    
-    echo "New SSH keypair generated"
-    echo "Public key:"
-    echo "====================="
-    cat /var/www/.ssh/id_rsa.pub
-    echo "====================="
+        
+        sudo chown www-data:www-data /var/www/.ssh/config
+        sudo chmod 600 /var/www/.ssh/config
+        
+        echo "New SSH keypair generated"
+        echo "Public key:"
+        echo "====================="
+        cat /var/www/.ssh/id_rsa.pub
+        echo "====================="
+    else
+        echo "Failed to generate SSH key, but continuing..."
+    fi
 else
     echo "Existing SSH key found, skipping key generation"
 fi
-
 
 # Handle CSRF Trusted Origins with support for HTTPS domains
 if [ -n "$CURRENT_IP" ]; then

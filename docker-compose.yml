@@ -19,7 +19,7 @@ networks:
 
 services:
 
-
+   
   # WebVirtCloud - Web-based KVM Virtual Machine Management Interface
   # Uses the GitHub Container Registry image with proper environment configuration      
   webvirtcloud:
@@ -37,20 +37,18 @@ services:
       - /dev/pts:/dev/pts
       
       # PERSISTENCE: All data that should survive container updates
-      - /srv/appdata/webvirtcloud/database:/srv/webvirtcloud/db.sqlite3
+      - /srv/appdata/webvirtcloud/database:/srv/webvirtcloud/database  # Map entire directory instead of single file
       - /srv/appdata/webvirtcloud/static:/srv/webvirtcloud/static
       - /srv/appdata/webvirtcloud/ssh:/var/www/.ssh
       - /srv/appdata/webvirtcloud/logs:/var/log
-
+      
     environment:
       # WebVirtCloud Configuration
       - TZ=Europe/Dublin
       - DEBUG=False
       
-      # CSRF configuration for Traefik reverse proxy
-      - CURRENT_IP=vms.deercrest.info:443 # Replace with your traffik alias
-      
-      # KVM Host Configuration
+      # Network Configuration for Traefik Integration
+      - CURRENT_IP=vms.deercrest.info:443
       - KVM_HOST=172.16.1.21  # Replace with your actual KVM host IP
       - KVM_HOSTNAME=hufflepuff  # Replace with your hostname
       
