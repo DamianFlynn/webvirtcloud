@@ -234,4 +234,4 @@ fi
 
 echo "WebVirtCloud initialization complete!"
 
-exec "$@""
+exec "$@"
