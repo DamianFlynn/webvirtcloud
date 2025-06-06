@@ -1,0 +1,97 @@
+name: ops
+
+
+########################### NETWORKS
+networks:
+#  default:
+#    driver: bridge
+#  socket_proxy:
+#    name: socket_proxy
+  t3_proxy:
+     external: true
+  operations:
+    name: operations
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 192.168.84.0/24
+
+
+services:
+
+
+  # WebVirtCloud - Web-based KVM Virtual Machine Management Interface
+  # Uses the GitHub Container Registry image with proper environment configuration      
+  webvirtcloud:
+    container_name: webvirtcloud
+    image: ghcr.io/damianflynn/webvirtcloud:latest
+    restart: unless-stopped
+    networks:
+      - t3_proxy
+      - operations
+    security_opt:
+      - no-new-privileges:true
+    volumes:
+      # LibVirt socket access for local hypervisor management
+      - /var/run/libvirt:/var/run/libvirt
+      # PTY devices for console access
+      - /dev/pts:/dev/pts
+
+      # IMPORTANT: Persist SSH keys to avoid reconfiguration
+      - /srv/appdata/webvirtcloud/ssh:/var/www/.ssh
+      
+      # Persistent data storage
+      # - /srv/appdata/webvirtcloud/data:/srv/webvirtcloud/db
+      # - /srv/appdata/webvirtcloud/logs:/var/log
+
+    environment:
+      # WebVirtCloud Configuration
+      - TZ=Europe/Dublin
+      - DEBUG=False
+      
+      # Network Configuration for Traefik Integration
+      - CURRENT_IP=vms.deercrest.info:443
+      - KVM_HOST=172.16.1.21  # Replace with your actual KVM host IP
+      - KVM_HOSTNAME=hufflepuff  # Replace with your hostname
+      
+      # WebSocket Configuration for noVNC Console Access
+      - WS_PUBLIC_HOST=vms.deercrest.info
+      - WS_PUBLIC_PORT=443
+      - WS_PUBLIC_PATH=novncd/
+      
+      # Internal WebSocket Configuration
+      - WS_HOST=0.0.0.0
+      - WS_PORT=6080
+
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+    labels:
+      # Enable Traefik
+      - traefik.enable=true
+      
+      # Main WebVirtCloud Web Interface
+      - traefik.http.routers.webvirtcloud-web.entrypoints=websecure
+      - traefik.http.routers.webvirtcloud-web.rule=Host(`vms.deercrest.info`)
+      - traefik.http.routers.webvirtcloud-web.middlewares=chain-authelia@file
+      - traefik.http.routers.webvirtcloud-web.tls=true
+      - traefik.http.routers.webvirtcloud-web.tls.certresolver=dns-cloudflare
+      - traefik.http.routers.webvirtcloud-web.service=webvirtcloud-web
+      - traefik.http.services.webvirtcloud-web.loadbalancer.server.port=80
+      
+      # noVNC Console WebSocket Service
+      - traefik.http.routers.webvirtcloud-vnc.entrypoints=websecure
+      - traefik.http.routers.webvirtcloud-vnc.rule=Host(`vms.deercrest.info`) && PathPrefix(`/novncd/`)
+      - traefik.http.routers.webvirtcloud-vnc.service=webvirtcloud-vnc
+      - traefik.http.routers.webvirtcloud-vnc.tls=true
+      - traefik.http.routers.webvirtcloud-vnc.tls.certresolver=dns-cloudflare
+      - traefik.http.services.webvirtcloud-vnc.loadbalancer.server.port=6080
+      
+      # HTTP to HTTPS redirect
+      - traefik.http.routers.webvirtcloud-web-insecure.entrypoints=web
+      - traefik.http.routers.webvirtcloud-web-insecure.rule=Host(`vms.deercrest.info`)
+      - traefik.http.routers.webvirtcloud-web-insecure.middlewares=redirect-to-https@file

@@ -1,8 +1,25 @@
 #!/bin/sh
 
-# Handle CSRF Trusted Origins
+# Handle CSRF Trusted Origins with support for HTTPS domains
 if [ -n "$CURRENT_IP" ]; then
-    sed -i "s|CSRF_TRUSTED_ORIGINS.*|CSRF_TRUSTED_ORIGINS = ['http://localhost','http://${CURRENT_IP}',]|" webvirtcloud/settings.py
+    # Extract domain and port from CURRENT_IP
+    DOMAIN_PORT="$CURRENT_IP"
+    
+    # Create CSRF trusted origins list supporting both HTTP and HTTPS
+    if echo "$DOMAIN_PORT" | grep -q ":443"; then
+        # HTTPS configuration
+        DOMAIN=$(echo "$DOMAIN_PORT" | cut -d: -f1)
+        CSRF_ORIGINS="['https://${DOMAIN}','http://localhost','http://127.0.0.1']"
+    elif echo "$DOMAIN_PORT" | grep -q ":80"; then
+        # HTTP configuration  
+        DOMAIN=$(echo "$DOMAIN_PORT" | cut -d: -f1)
+        CSRF_ORIGINS="['http://${DOMAIN}','https://${DOMAIN}','http://localhost','http://127.0.0.1']"
+    else
+        # Custom port configuration
+        CSRF_ORIGINS="['http://${DOMAIN_PORT}','https://${DOMAIN_PORT}','http://localhost','http://127.0.0.1']"
+    fi
+    
+    sed -i "s|CSRF_TRUSTED_ORIGINS.*|CSRF_TRUSTED_ORIGINS = ${CSRF_ORIGINS}|" webvirtcloud/settings.py
 fi
 
 # Handle WebSocket Public Host
