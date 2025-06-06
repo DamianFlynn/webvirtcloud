@@ -13,19 +13,16 @@ if [ ! -f "db.sqlite3" ] || [ ! -s "db.sqlite3" ]; then
     echo "Database not found or empty, initializing..."
     python3 manage.py makemigrations
     python3 manage.py migrate
-    chown www-data:www-data db.sqlite3
     echo "Database initialized"
 else
     echo "Existing database found, running migrations..."
     python3 manage.py migrate
-    chown www-data:www-data db.sqlite3
 fi
 
 # Static files - Only collect if static directory is empty or missing
 if [ ! -d "static" ] || [ -z "$(ls -A static 2>/dev/null)" ]; then
     echo "Static files not found, collecting..."
     python3 manage.py collectstatic --noinput
-    chown -R www-data:www-data static
     echo "Static files collected"
 else
     echo "Static files found, skipping collection"
@@ -35,8 +32,6 @@ fi
 if [ ! -f /var/www/.ssh/id_rsa ]; then
     echo "No existing SSH key found, generating new keypair..."
     mkdir -p /var/www/.ssh
-    chown www-data:www-data /var/www/.ssh
-    chmod 700 /var/www/.ssh
     
     # Generate SSH key as www-data user
     sudo -u www-data ssh-keygen -q -N "" -f /var/www/.ssh/id_rsa
@@ -49,8 +44,6 @@ Host *
     LogLevel QUIET
 EOF
     
-    chown www-data:www-data /var/www/.ssh/config
-    chmod 600 /var/www/.ssh/config
     
     echo "New SSH keypair generated"
     echo "Public key:"
@@ -61,11 +54,6 @@ else
     echo "Existing SSH key found, skipping key generation"
 fi
 
-# Ensure proper permissions on existing keys (in case they were mounted)
-chown -R www-data:www-data /var/www/.ssh
-chmod 700 /var/www/.ssh
-chmod 600 /var/www/.ssh/id_rsa /var/www/.ssh/id_rsa.pub 2>/dev/null || true
-chmod 600 /var/www/.ssh/config 2>/dev/null || true
 
 # Handle CSRF Trusted Origins with support for HTTPS domains
 if [ -n "$CURRENT_IP" ]; then
