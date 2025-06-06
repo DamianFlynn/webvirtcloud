@@ -17,136 +17,272 @@
 * User can change root password in Instance (Tested only Ubuntu)
 * Supports cloud-init datasource interface
 
-## Start the Container
+## Running within a Container
+
+I have packaged the image to a container, which I am hosting on Github Container services. 
+Using the following we can run this container on our host.
+
+> **Note:** If the host has a firewall running, you must ensure that the ports we are to listen on are open!
+
+### Prerequisites
+
+Before starting, ensure your host system has:
+- KVM/libvirt properly configured
+- Docker installed and running
+- Firewall configured to allow the necessary ports
+
+### Container Configuration
+
+#### Environment Variables
+
+The container uses several environment variables for configuration:
+
+| Variable | Description | Example Value |
+|----------|-------------|---------------|
+| `CURRENT_IP` | Your host IP and WebVirtCloud port | `"192.168.1.100:8080"` |
+| `DEBUG` | Enable debug logging | `True` |
+| `KVM_HOST` | Your KVM host IP address | `"192.168.1.100"` |
+| `KVM_HOSTNAME` | Your host's hostname | `"myhost"` |
+| `WS_PUBLIC_HOST` | Host IP for WebSocket connections | `"192.168.1.100"` |
+| `WS_PUBLIC_PORT` | External port for noVNC WebSocket | `"6080"` |
+| `WS_PUBLIC_PATH` | WebSocket path | `"novncd/"` |
+
+#### Port Mapping
+
+| Internal Port | External Port | Purpose |
+|---------------|---------------|---------|
+| 80 | 8080 (configurable) | WebVirtCloud web interface |
+| 6080 | 6080 (configurable) | noVNC WebSocket for console access |
+
+### Start the Container
+
+Replace the IP addresses and ports with your actual values:
 
 ```bash
-# Stop and restart with proper WebSocket configuration
-docker stop webvirttest && docker rm webvirttest
+# Set your configuration variables
+HOST_IP="192.168.1.100"          # Replace with your host IP
+WEB_PORT="8080"                  # Replace with desired web interface port
+VNC_PORT="6080"                  # Replace with desired VNC console port
+HOSTNAME="$(hostname)"           # Or set your hostname manually
 
+# Stop and remove existing container if it exists
+docker stop webvirttest 2>/dev/null && docker rm webvirttest 2>/dev/null
+
+# Start the container with your configuration
 docker run -dit \
-  -e CURRENT_IP="172.16.1.21:5100" \
+  -e CURRENT_IP="${HOST_IP}:${WEB_PORT}" \
   -e DEBUG=True \
-  -e KVM_HOST="172.16.1.21" \
-  -e KVM_HOSTNAME="hufflepuff" \
-  -e WS_PUBLIC_HOST="172.16.1.21" \
-  -e WS_PUBLIC_PORT="5180" \
+  -e KVM_HOST="${HOST_IP}" \
+  -e KVM_HOSTNAME="${HOSTNAME}" \
+  -e WS_PUBLIC_HOST="${HOST_IP}" \
+  -e WS_PUBLIC_PORT="${VNC_PORT}" \
   -e WS_PUBLIC_PATH="novncd/" \
   -v /var/run/libvirt/:/var/run/libvirt/ \
   -v /dev/pts/:/dev/pts/ \
-  -p 5100:80 \
-  -p 5180:6080 \
+  -p ${WEB_PORT}:80 \
+  -p ${VNC_PORT}:6080 \
   --name webvirttest \
-  ghcr.io/damianflynn/webvirtcloud:20250606074325
+  ghcr.io/damianflynn/webvirtcloud:20250606075619
 ```
 
-### Set up SSH access using your existing SSH key:
-From your config, I can see you have SSH keys configured. Use the existing public key:
+### Security: Create a Dedicated User (Recommended)
+
+For better security, create a dedicated user for WebVirtCloud connections instead of using your personal account.
+
+#### For NixOS Users
+
+Add this configuration to your NixOS system configuration:
+
+```nix
+# Add to your system configuration
+users.users.webvirtcloud = {
+  isNormalUser = true;
+  description = "WebVirtCloud Service User";
+  extraGroups = [ "libvirtd" "libvirt" "kvm" "qemu-libvirtd" ];
+  openssh.authorizedKeys.keys = [
+    # This will be filled with the container's public key
+  ];
+};
+
+# Ensure polkit rules allow this user to manage VMs
+security.polkit.extraConfig = ''
+  polkit.addRule(function(action, subject) {
+    if (action.id == "org.libvirt.unix.manage" &&
+        subject.user == "webvirtcloud") {
+        return polkit.Result.YES;
+    }
+  });
+'';
+```
+
+Apply the configuration:
+```bash
+sudo nixos-rebuild switch
+```
+
+#### For Other Linux Distributions
 
 ```bash
-# Get the container's public key
-docker exec -it webvirttest sudo -u www-data cat /var/www/.ssh/id_rsa.pub
+# Create dedicated user
+sudo useradd -m -s /bin/bash webvirtcloud
+sudo usermod -a -G libvirt,kvm,qemu-libvirtd webvirtcloud
 
-# Add it to your user's authorized_keys (since you have sudo access)
+# Create SSH directory
+sudo mkdir -p /home/webvirtcloud/.ssh
+sudo chown webvirtcloud:webvirtcloud /home/webvirtcloud/.ssh
+sudo chmod 700 /home/webvirtcloud/.ssh
+
+# Configure polkit (create file /etc/polkit-1/rules.d/50-webvirtcloud.rules)
+sudo tee /etc/polkit-1/rules.d/50-webvirtcloud.rules << 'EOF'
+polkit.addRule(function(action, subject) {
+  if (action.id == "org.libvirt.unix.manage" &&
+      subject.user == "webvirtcloud") {
+      return polkit.Result.YES;
+  }
+});
+EOF
+
+sudo systemctl restart polkit
+```
+
+### Set up SSH Access
+
+#### Step 1: Get the Container's Public Key
+
+```bash
+# Get the container's SSH public key
+docker exec -it webvirttest sudo -u www-data cat /var/www/.ssh/id_rsa.pub
+```
+
+Copy the output (it will look like `ssh-rsa AAAAB3Nza...` or `ssh-ed25519 AAAAC3Nza...`).
+
+#### Step 2: Add Key to Host User
+
+**For the dedicated webvirtcloud user (recommended):**
+```bash
+# Add the key to the webvirtcloud user
+echo "PASTE_THE_PUBLIC_KEY_HERE" | sudo tee -a /home/webvirtcloud/.ssh/authorized_keys
+sudo chmod 600 /home/webvirtcloud/.ssh/authorized_keys
+sudo chown webvirtcloud:webvirtcloud /home/webvirtcloud/.ssh/authorized_keys
+```
+
+**For your personal user (less secure):**
+```bash
+# Add to your user's authorized_keys
 echo "PASTE_THE_PUBLIC_KEY_HERE" >> ~/.ssh/authorized_keys
 chmod 600 ~/.ssh/authorized_keys
-
-# Also add to root if you want to connect as root
-sudo mkdir -p /root/.ssh
-echo "PASTE_THE_PUBLIC_KEY_HERE" | sudo tee -a /root/.ssh/authorized_keys
-sudo chmod 600 /root/.ssh/authorized_keys
-sudo chmod 700 /root/.ssh
 ```
 
-### Test connection to KVM
+### Test SSH Connection
 
-Test the connection from inside the container
+Test the connection from the container to your host:
 
 ```bash
-# Test with your user account
-docker exec -it webvirttest sudo -u www-data ssh -o ConnectTimeout=5 damian@172.16.1.21 'virsh -c qemu:///system list --all'
+# Test with dedicated webvirtcloud user (recommended)
+docker exec -it webvirttest sudo -u www-data ssh -o ConnectTimeout=5 webvirtcloud@YOUR_HOST_IP 'virsh -c qemu:///system list --all'
 
-# Or test with root if configured
-docker exec -it webvirttest sudo -u www-data ssh -o ConnectTimeout=5 root@172.16.1.21 'virsh -c qemu:///system list --all'
+# Test with your personal user
+docker exec -it webvirttest sudo -u www-data ssh -o ConnectTimeout=5 YOUR_USERNAME@YOUR_HOST_IP 'virsh -c qemu:///system list --all'
 ```
 
-## Configure WebVirtCloud:
+If successful, you should see a list of your virtual machines.
 
-1. Access `http://172.16.1.21:5100`
-1. Go to *Computes → SSH*
-   * *Name*: hufflepuff
-   * *Hostname*: 172.16.1.21
-   * *Login*: damian
+### Configure WebVirtCloud
 
-After making these changes, your WebVirtCloud container should be able to connect to your NixOS host and see your hass VM.
+1. **Access the web interface:** `http://YOUR_HOST_IP:YOUR_WEB_PORT`
+2. **Login with default credentials:**
+   - Username: `admin`
+   - Password: `admin`
+3. **Add your compute host:**
+   - Go to **Computes** → **Add SSH Compute**
+   - **Name:** `your-hostname`
+   - **Hostname:** `YOUR_HOST_IP`
+   - **Login:** `webvirtcloud` (or your username)
+   - **Details:** Optional description
 
-> Connection: qemu+ssh://damian@172.16.1.21/system
+After saving, the status should show "Connected" if the SSH configuration is correct.
 
-## Troubleshooting WebSocket Connection
+### Firewall Configuration
 
-### Manual WebSocket Configuration Fix
+#### NixOS Firewall (using your KVM module)
 
-If the environment variables don't take effect, you can manually fix the settings:
+Your KVM module already includes the necessary firewall rules. If you're using different ports, update your configuration:
+
+```nix
+# In your KVM module or system configuration
+networking.firewall.allowedTCPPorts = [ 
+  8080  # WebVirtCloud web interface (adjust to your WEB_PORT)
+  6080  # noVNC console access (adjust to your VNC_PORT)
+];
+
+networking.firewall.allowedTCPPortRanges = [
+  { from = 5900; to = 5910; }  # VNC ports for VM consoles
+];
+```
+
+#### Other Linux Distributions
 
 ```bash
-# Update the WebSocket settings manually
-docker exec -it webvirttest sed -i 's/WS_PUBLIC_HOST = None/WS_PUBLIC_HOST = "172.16.1.21"/' /srv/webvirtcloud/webvirtcloud/settings.py
-docker exec -it webvirttest sed -i 's/WS_PUBLIC_PORT = 6080/WS_PUBLIC_PORT = 5180/' /srv/webvirtcloud/webvirtcloud/settings.py
+# UFW (Ubuntu/Debian)
+sudo ufw allow 8080/tcp     # WebVirtCloud web interface
+sudo ufw allow 6080/tcp     # noVNC console
+sudo ufw allow 5900:5910/tcp # VNC range
 
-# Restart the WebVirtCloud service
-docker exec -it webvirttest sv restart webvirtcloud
-docker exec -it webvirttest sv restart novnc
+# Firewalld (RHEL/CentOS/Fedora)
+sudo firewall-cmd --permanent --add-port=8080/tcp
+sudo firewall-cmd --permanent --add-port=6080/tcp
+sudo firewall-cmd --permanent --add-port=5900-5910/tcp
+sudo firewall-cmd --reload
+
+# iptables (manual)
+sudo iptables -A INPUT -p tcp --dport 8080 -j ACCEPT
+sudo iptables -A INPUT -p tcp --dport 6080 -j ACCEPT
+sudo iptables -A INPUT -p tcp --dport 5900:5910 -j ACCEPT
 ```
 
-### VNC Console Connection Issues
+### Example: Complete Setup for NixOS
 
-If you can't connect to the VM console through WebVirtCloud:
-
-1. **Verify VNC configuration:**
-```bash
-# Check VM VNC settings
-virsh dumpxml <vm-name> | grep -A5 -B5 graphics
-virsh vncdisplay <vm-name>
-```
-
-2. **Test VNC connectivity:**
-```bash
-# From host
-nc -zv localhost 5901
-
-# From container
-docker exec -it webvirttest nc -zv 172.16.1.21 5901
-```
-
-3. **Check firewall settings on NixOS:**
-```bash
-# VNC ports should be allowed (already configured in your KVM module)
-sudo iptables -I INPUT -p tcp --dport 5900:5910 -j ACCEPT
-```
-
-### Warning!!!
-
-How to update <code>gstfsd</code> daemon on hypervisor:
+Here's a complete example for a NixOS system with IP `192.168.1.100`:
 
 ```bash
-wget -O - https://bit.ly/2NAaWXG | sudo tee -a /usr/local/bin/gstfsd
-sudo service supervisor restart
+# 1. Set variables
+HOST_IP="192.168.1.100"
+WEB_PORT="8080"
+VNC_PORT="6080"
+
+# 2. Start container
+docker run -dit \
+  -e CURRENT_IP="${HOST_IP}:${WEB_PORT}" \
+  -e DEBUG=True \
+  -e KVM_HOST="${HOST_IP}" \
+  -e KVM_HOSTNAME="$(hostname)" \
+  -e WS_PUBLIC_HOST="${HOST_IP}" \
+  -e WS_PUBLIC_PORT="${VNC_PORT}" \
+  -e WS_PUBLIC_PATH="novncd/" \
+  -v /var/run/libvirt/:/var/run/libvirt/ \
+  -v /dev/pts/:/dev/pts/ \
+  -p ${WEB_PORT}:80 \
+  -p ${VNC_PORT}:6080 \
+  --name webvirttest \
+  ghcr.io/damianflynn/webvirtcloud:20250606075619
+
+# 3. Get container's public key
+CONTAINER_KEY=$(docker exec -it webvirttest sudo -u www-data cat /var/www/.ssh/id_rsa.pub)
+
+# 4. Add key to webvirtcloud user
+echo "${CONTAINER_KEY}" | sudo tee -a /home/webvirtcloud/.ssh/authorized_keys
+sudo chmod 600 /home/webvirtcloud/.ssh/authorized_keys
+sudo chown webvirtcloud:webvirtcloud /home/webvirtcloud/.ssh/authorized_keys
+
+# 5. Test connection
+docker exec -it webvirttest sudo -u www-data ssh -o ConnectTimeout=5 webvirtcloud@${HOST_IP} 'virsh -c qemu:///system list --all'
+
+# 6. Access WebVirtCloud at http://192.168.1.100:8080
 ```
 
-## Description
+### Troubleshooting
 
-WebVirtCloud is a virtualization web interface for admins and users. It can delegate Virtual Machine's to users. A noVNC viewer presents a full graphical console to the guest domain.  KVM is currently the only hypervisor supported.
-
-## Quick Install with Installer (Beta)
-
-Install an OS and run specified commands. Installer supported OSes: Ubuntu 18.04/20.04, Debian 10/11, Centos/OEL/RHEL 8.
-It can be installed on a virtual machine, physical host or on a KVM host.
-
-```bash
-wget https://raw.githubusercontent.com/retspen/webvirtcloud/master/install.sh
-chmod 744 install.sh
-# run with sudo or root user
-./install.sh
-```
+If you encounter issues, check the [Troubleshooting section](#troubleshooting-websocket-connection) below for common problems and solutions.
 
 ## Manual Installation
 
