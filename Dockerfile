@@ -39,13 +39,15 @@ RUN python3 -m venv venv && \
     pip3 install wheel && \
     pip3 install -r conf/requirements.txt && \
     pip3 cache purge && \
+    # Create directory structures but don't initialize data
+    mkdir -p ~www-data/.ssh && \
+    mkdir -p /srv/webvirtcloud/static && \
+    # Ensure novncd script is executable
+    chmod +x /srv/webvirtcloud/console/novncd && \
     chown -R www-data:www-data /srv/webvirtcloud && \
     printf "\n%s" "daemon off;" >> /etc/nginx/nginx.conf && \
     rm /etc/nginx/sites-enabled/default && \
     chown -R www-data:www-data /var/lib/nginx && \
-    # Create directory structures but don't initialize data
-    mkdir -p ~www-data/.ssh && \
-    mkdir -p /srv/webvirtcloud/static && \
     chown -R www-data:www-data ~www-data && \
     chown -R www-data:www-data /srv/webvirtcloud/static
     # Database migrations, static files, and SSH keys will be handled at runtime

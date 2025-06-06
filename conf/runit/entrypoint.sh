@@ -32,6 +32,29 @@ echo "Collecting static files..."
 python3 manage.py collectstatic --noinput --clear
 echo "Static files collected"
 
+# Verify critical noVNC files exist
+echo "Verifying noVNC files..."
+if [ ! -f "static/js/novnc/core/rfb.js" ]; then
+    echo "WARNING: rfb.js not found in static files"
+    # Try to find it in the source and copy manually
+    if [ -f "static/js/novnc/core/rfb.js" ]; then
+        echo "Found rfb.js, copying to correct location"
+    fi
+fi
+
+if [ ! -f "static/js/novnc/app/styles/lite.css" ]; then
+    echo "WARNING: lite.css not found"
+    # Check if base.css exists and can be used
+    if [ -f "static/js/novnc/app/styles/base.css" ]; then
+        echo "Using base.css instead of lite.css"
+        ln -sf base.css static/js/novnc/app/styles/lite.css
+    fi
+fi
+
+# List static directory structure for debugging
+echo "Static directory structure:"
+find static/js/novnc -type f -name "*.js" -o -name "*.css" | head -20
+
 # Fix static files and cache directory permissions
 echo "Setting static files permissions..."
 if [ -d "static" ]; then
@@ -61,7 +84,7 @@ if [ ! -d "/etc/service/novncd" ]; then
 exec 2>&1
 cd /srv/webvirtcloud
 . venv/bin/activate
-exec chpst -u www-data:www-data python /srv/webvirtcloud/console/novncd.py
+exec chpst -u www-data:www-data python /srv/webvirtcloud/console/novncd
 EOF
     chmod +x /etc/service/novncd/run
     echo "NoVNC service created"
