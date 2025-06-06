@@ -27,14 +27,10 @@ if [ -f "db.sqlite3" ]; then
     echo "Database permissions set"
 fi
 
-# Static files - Only collect if static directory is empty or missing
-if [ ! -d "static" ] || [ -z "$(ls -A static 2>/dev/null)" ]; then
-    echo "Static files not found, collecting..."
-    python3 manage.py collectstatic --noinput
-    echo "Static files collected"
-else
-    echo "Static files found, skipping collection"
-fi
+# Static files - Always collect to ensure noVNC files are present
+echo "Collecting static files..."
+python3 manage.py collectstatic --noinput --clear
+echo "Static files collected"
 
 # Fix static files and cache directory permissions
 echo "Setting static files permissions..."
@@ -46,6 +42,13 @@ if [ -d "static" ]; then
     mkdir -p static/icon_cache
     chown www-data:www-data static/icon_cache
     chmod 755 static/icon_cache
+    
+    # Ensure noVNC static files have proper permissions
+    if [ -d "static/js" ]; then
+        chmod -R 644 static/js/*.js
+        chmod -R 644 static/css/*.css
+    fi
+    
     echo "Static files permissions set"
 fi
 

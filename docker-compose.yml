@@ -37,11 +37,11 @@ services:
       - /dev/pts:/dev/pts
       
       # PERSISTENCE: All data that should survive container updates
-      - /srv/appdata/webvirtcloud/database:/srv/webvirtcloud/database  # Map entire directory instead of single file
+      - /srv/appdata/webvirtcloud/database:/srv/webvirtcloud/database
       - /srv/appdata/webvirtcloud/static:/srv/webvirtcloud/static
       - /srv/appdata/webvirtcloud/ssh:/var/www/.ssh
       - /srv/appdata/webvirtcloud/logs:/var/log
-      
+         
     environment:
       # WebVirtCloud Configuration
       - TZ=Europe/Dublin
