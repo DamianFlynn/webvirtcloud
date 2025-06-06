@@ -88,8 +88,15 @@ services:
       - traefik.http.routers.webvirtcloud-vnc.tls=true
       - traefik.http.routers.webvirtcloud-vnc.tls.certresolver=dns-cloudflare
       - traefik.http.services.webvirtcloud-vnc.loadbalancer.server.port=6080
+
+      # WebSocket specific headers
+      - traefik.http.middlewares.websocket-headers.headers.customrequestheaders.Connection=upgrade
+      - traefik.http.middlewares.websocket-headers.headers.customrequestheaders.Upgrade=websocket
+      - traefik.http.routers.webvirtcloud-vnc.middlewares=websocket-headers
       
       # HTTP to HTTPS redirect
       - traefik.http.routers.webvirtcloud-web-insecure.entrypoints=web
       - traefik.http.routers.webvirtcloud-web-insecure.rule=Host(`vms.deercrest.info`)
       - traefik.http.routers.webvirtcloud-web-insecure.middlewares=redirect-to-https@file
+
+      

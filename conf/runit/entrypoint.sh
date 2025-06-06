@@ -45,11 +45,26 @@ if [ -d "static" ]; then
     
     # Ensure noVNC static files have proper permissions
     if [ -d "static/js" ]; then
-        chmod -R 644 static/js/*.js
-        chmod -R 644 static/css/*.css
+        chmod -R 644 static/js/*.js 2>/dev/null || true
+        chmod -R 644 static/css/*.css 2>/dev/null || true
     fi
     
     echo "Static files permissions set"
+fi
+
+# Setup NoVNC service if it doesn't exist
+echo "Setting up NoVNC service..."
+if [ ! -d "/etc/service/novncd" ]; then
+    mkdir -p /etc/service/novncd
+    cat > /etc/service/novncd/run << 'EOF'
+#!/bin/sh
+exec 2>&1
+cd /srv/webvirtcloud
+. venv/bin/activate
+exec chpst -u www-data:www-data python /srv/webvirtcloud/console/novncd.py
+EOF
+    chmod +x /etc/service/novncd/run
+    echo "NoVNC service created"
 fi
 
 # SSH Key Management - Only generate if keys don't exist
