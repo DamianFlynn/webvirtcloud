@@ -284,6 +284,33 @@ docker exec -it webvirtcloud sudo -u www-data ssh -o ConnectTimeout=5 webvirtclo
 
 If you encounter issues, check the [Troubleshooting section](#troubleshooting-websocket-connection) below for common problems and solutions.
 
+### Docker Compose
+
+A docker compose file is included in the repo, 
+
+```bash
+#!/bin/bash
+
+# Setup script for WebVirtCloud persistent data
+DATA_DIR="/srv/appdata/webvirtcloud"
+
+echo "Setting up WebVirtCloud persistent storage..."
+
+# Create all required directories
+sudo mkdir -p "${DATA_DIR}"/{database,static,ssh,logs}
+
+# Set proper ownership (www-data UID:GID = 33:33)
+sudo chown -R root:root "${DATA_DIR}"
+
+# Set proper permissions
+sudo chmod 755 "${DATA_DIR}"
+sudo chmod 700 "${DATA_DIR}/ssh"
+
+echo "Persistent storage setup complete!"
+echo "Directory structure:"
+ls -la "${DATA_DIR}/"
+```
+
 ## Manual Installation
 
 ### Generate secret key

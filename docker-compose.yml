@@ -32,25 +32,25 @@ services:
     security_opt:
       - no-new-privileges:true
     volumes:
-      # LibVirt socket access for local hypervisor management
+      # REQUIRED: LibVirt and console access
       - /var/run/libvirt:/var/run/libvirt
-      # PTY devices for console access
       - /dev/pts:/dev/pts
-
-      # IMPORTANT: Persist SSH keys to avoid reconfiguration
-      - /srv/appdata/webvirtcloud/ssh:/var/www/.ssh
       
-      # Persistent data storage
-      # - /srv/appdata/webvirtcloud/data:/srv/webvirtcloud/db
-      # - /srv/appdata/webvirtcloud/logs:/var/log
+      # PERSISTENCE: All data that should survive container updates
+      - /srv/appdata/webvirtcloud/database:/srv/webvirtcloud/db.sqlite3
+      - /srv/appdata/webvirtcloud/static:/srv/webvirtcloud/static
+      - /srv/appdata/webvirtcloud/ssh:/var/www/.ssh
+      - /srv/appdata/webvirtcloud/logs:/var/log
 
     environment:
       # WebVirtCloud Configuration
       - TZ=Europe/Dublin
       - DEBUG=False
       
-      # Network Configuration for Traefik Integration
-      - CURRENT_IP=vms.deercrest.info:443
+      # CSRF configuration for Traefik reverse proxy
+      - CURRENT_IP=vms.deercrest.info:443 # Replace with your traffik alias
+      
+      # KVM Host Configuration
       - KVM_HOST=172.16.1.21  # Replace with your actual KVM host IP
       - KVM_HOSTNAME=hufflepuff  # Replace with your hostname
       
