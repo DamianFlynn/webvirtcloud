@@ -17,6 +17,72 @@
 * User can change root password in Instance (Tested only Ubuntu)
 * Supports cloud-init datasource interface
 
+## Start the Container
+
+```bash
+# Stop and restart with proper WebSocket configuration
+docker stop webvirttest && docker rm webvirttest
+
+docker run -dit \
+  -e CURRENT_IP="172.16.1.21:5100" \
+  -e DEBUG=True \
+  -e KVM_HOST="172.16.1.21" \
+  -e KVM_HOSTNAME="hufflepuff" \
+  -e WS_PUBLIC_HOST="172.16.1.21" \
+  -e WS_PUBLIC_PORT="5180" \
+  -e WS_PUBLIC_PATH="novncd/" \
+  -v /var/run/libvirt/:/var/run/libvirt/ \
+  -v /dev/pts/:/dev/pts/ \
+  -p 5100:80 \
+  -p 5180:6080 \
+  --name webvirttest \
+  ghcr.io/damianflynn/webvirtcloud:20250605180504
+```
+
+### Set up SSH access using your existing SSH key:
+From your config, I can see you have SSH keys configured. Use the existing public key:
+
+```bash
+# Get the container's public key
+docker exec -it webvirttest sudo -u www-data cat /var/www/.ssh/id_rsa.pub
+
+# Add it to your user's authorized_keys (since you have sudo access)
+echo "PASTE_THE_PUBLIC_KEY_HERE" >> ~/.ssh/authorized_keys
+chmod 600 ~/.ssh/authorized_keys
+
+# Also add to root if you want to connect as root
+sudo mkdir -p /root/.ssh
+echo "PASTE_THE_PUBLIC_KEY_HERE" | sudo tee -a /root/.ssh/authorized_keys
+sudo chmod 600 /root/.ssh/authorized_keys
+sudo chmod 700 /root/.ssh
+```
+
+### Test connection to KVM
+
+Test the connection from inside the container
+
+```bash
+# Test with your user account
+docker exec -it webvirttest sudo -u www-data ssh -o ConnectTimeout=5 damian@172.16.1.21 'virsh -c qemu:///system list --all'
+
+# Or test with root if configured
+docker exec -it webvirttest sudo -u www-data ssh -o ConnectTimeout=5 root@172.16.1.21 'virsh -c qemu:///system list --all'
+```
+
+## Configure WebVirtCloud:
+
+1. Access `http://172.16.1.21:5100`
+1. Go to *Computes → SSH*
+   * *Name*: hufflepuff
+   * *Hostname*: 172.16.1.21
+   * *Login*: damian
+
+After making these changes, your WebVirtCloud container should be able to connect to your NixOS host and see your hass VM.
+
+> Connection: qemu+ssh://damian@172.16.1.21/system
+
+
+
 ### Warning!!!
 
 How to update <code>gstfsd</code> daemon on hypervisor:
