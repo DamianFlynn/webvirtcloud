@@ -74,29 +74,26 @@ services:
       
       # Main WebVirtCloud Web Interface
       - traefik.http.routers.webvirtcloud-web.entrypoints=websecure
-      - traefik.http.routers.webvirtcloud-web.rule=Host(`vms.deercrest.info`)
+      - traefik.http.routers.webvirtcloud-web.rule=Host(`vms.deercrest.info`) && !PathPrefix(`/novncd/`)
       - traefik.http.routers.webvirtcloud-web.middlewares=chain-authelia@file
       - traefik.http.routers.webvirtcloud-web.tls=true
       - traefik.http.routers.webvirtcloud-web.tls.certresolver=dns-cloudflare
       - traefik.http.routers.webvirtcloud-web.service=webvirtcloud-web
       - traefik.http.services.webvirtcloud-web.loadbalancer.server.port=80
       
-      # noVNC Console WebSocket Service
+      # noVNC Console WebSocket Service (NO AUTHENTICATION for WebSocket)
       - traefik.http.routers.webvirtcloud-vnc.entrypoints=websecure
       - traefik.http.routers.webvirtcloud-vnc.rule=Host(`vms.deercrest.info`) && PathPrefix(`/novncd/`)
       - traefik.http.routers.webvirtcloud-vnc.service=webvirtcloud-vnc
       - traefik.http.routers.webvirtcloud-vnc.tls=true
       - traefik.http.routers.webvirtcloud-vnc.tls.certresolver=dns-cloudflare
-      - traefik.http.services.webvirtcloud-vnc.loadbalancer.server.port=6080
+      - traefik.http.services.webvirtcloud-vnc.loadbalancer.server.port=6080      
 
-      # WebSocket specific headers
-      - traefik.http.middlewares.websocket-headers.headers.customrequestheaders.Connection=upgrade
-      - traefik.http.middlewares.websocket-headers.headers.customrequestheaders.Upgrade=websocket
-      - traefik.http.routers.webvirtcloud-vnc.middlewares=websocket-headers
+      # Remove authentication middleware from WebSocket route
+      # WebSocket connections don't work well with authentication proxies
       
       # HTTP to HTTPS redirect
       - traefik.http.routers.webvirtcloud-web-insecure.entrypoints=web
       - traefik.http.routers.webvirtcloud-web-insecure.rule=Host(`vms.deercrest.info`)
       - traefik.http.routers.webvirtcloud-web-insecure.middlewares=redirect-to-https@file
-
       

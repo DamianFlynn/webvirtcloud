@@ -156,10 +156,13 @@ if [ -n "$WS_PUBLIC_PORT" ]; then
     sed -i "s|WS_PUBLIC_PORT = 6080|WS_PUBLIC_PORT = ${WS_PUBLIC_PORT}|" webvirtcloud/settings.py
 fi
 
-# Handle WebSocket Public Path
+# Handle WebSocket Public Path - ensure it ends with /
 if [ -n "$WS_PUBLIC_PATH" ]; then
     echo "Configuring WebSocket public path: $WS_PUBLIC_PATH"
-    sed -i "s|WS_PUBLIC_PATH = \"/novncd/\"|WS_PUBLIC_PATH = \"/${WS_PUBLIC_PATH}\"|" webvirtcloud/settings.py
+    # Ensure path starts and ends with /
+    WS_PATH_CLEAN=$(echo "$WS_PUBLIC_PATH" | sed 's|^/*||' | sed 's|/*$||')
+    WS_PATH_FORMATTED="/${WS_PATH_CLEAN}/"
+    sed -i "s|WS_PUBLIC_PATH = \"/novncd/\"|WS_PUBLIC_PATH = \"${WS_PATH_FORMATTED}\"|" webvirtcloud/settings.py
 fi
 
 # Handle WebSocket Host
