@@ -1,7 +1,20 @@
 FROM phusion/baseimage:noble-1.0.2
 
-# docker run -dit -e CURRENT_IP=$(curl -4 ifconfig.me) -p 80:80 -p 6080:6080 --name webvirtcloud madebug/webvirtcloud:latest 
-# docker exec -it webvirtcloud  sudo -u www-data ssh-copy-id root@x.x.x.x
+# docker run -dit \
+#   -e CURRENT_IP="172.16.1.21:5100" \
+#   -e DEBUG=True \
+#   -e KVM_HOST="172.16.1.21" \
+#   -e KVM_HOSTNAME="hufflepuff" \
+#   -e WS_PUBLIC_HOST="172.16.1.21" \
+#   -e WS_PUBLIC_PORT="5180" \
+#   -e WS_PUBLIC_PATH="novncd/" \
+#   -v /var/run/libvirt/:/var/run/libvirt/ \
+#   -v /dev/pts/:/dev/pts/ \
+#   -p 5100:80 \
+#   -p 5180:6080 \
+#   --name webvirttest \
+#   ghcr.io/damianflynn/webvirtcloud:20250605180504
+
 EXPOSE 80 6080
 
 # Use baseimage-docker's init system.
