@@ -12,7 +12,7 @@ RUN echo 'APT::Get::Clean=always;' >> /etc/apt/apt.conf.d/99AutomaticClean && \
     DEBIAN_FRONTEND=noninteractive apt-get -qyy install --no-install-recommends \
         git sudo vim nano python3-venv python3-dev python3-lxml libvirt-dev \
         zlib1g-dev nginx pkg-config gcc libldap2-dev libssl-dev \
-        libsasl2-dev libsasl2-modules && \
+        libsasl2-dev libsasl2-modules net-tools lsof procps && \
         apt-get clean && \
         rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* && \
     mkdir /etc/service/nginx && \
@@ -25,7 +25,11 @@ RUN echo 'APT::Get::Clean=always;' >> /etc/apt/apt.conf.d/99AutomaticClean && \
        cp /srv/webvirtcloud/conf/runit/webvirtcloud.sh /etc/service/webvirtcloud/run && \
        cp /srv/webvirtcloud/conf/runit/novncd.sh /etc/service/novnc/run && \
        cp /srv/webvirtcloud/conf/runit/entrypoint.sh /etc/my_init.d/entrypoint.sh && \
-       chmod +x /etc/my_init.d/entrypoint.sh && \ 
+       chmod +x /etc/my_init.d/entrypoint.sh && \
+       chmod +x /etc/service/nginx/run && \
+       chmod +x /etc/service/nginx-log-forwarder/run && \
+       chmod +x /etc/service/webvirtcloud/run && \
+       chmod +x /etc/service/novnc/run && \
        cp /srv/webvirtcloud/webvirtcloud/settings.py.template /srv/webvirtcloud/webvirtcloud/settings.py && \
        SECRET=$(python3 /srv/webvirtcloud/conf/runit/secret_generator.py) && \
        sed -i "s|SECRET_KEY = \"\"|SECRET_KEY = \"$SECRET\"|" /srv/webvirtcloud/webvirtcloud/settings.py && \

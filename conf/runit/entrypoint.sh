@@ -8,6 +8,35 @@ cd /srv/webvirtcloud
 # Activate virtual environment
 . venv/bin/activate
 
+# Function to check if port is in use
+check_port() {
+    netstat -tuln 2>/dev/null | grep -q ":$1 " && return 0 || return 1
+}
+
+# Function to cleanup any existing processes
+cleanup_processes() {
+    echo "Cleaning up any existing WebVirtCloud processes..."
+    
+    # Kill any existing gunicorn processes
+    pkill -f "gunicorn.*webvirtcloud" 2>/dev/null || true
+    
+    # Kill any existing novncd processes
+    pkill -f "console/novncd" 2>/dev/null || true
+    
+    # Wait a moment for processes to terminate
+    sleep 3
+    
+    # Clean up ports if still in use
+    local web_port=${WS_PORT:-6080}
+    if check_port $web_port; then
+        echo "Forcefully cleaning up port $web_port"
+        lsof -ti:$web_port 2>/dev/null | xargs kill -9 2>/dev/null || true
+    fi
+}
+
+# Cleanup any existing processes first
+cleanup_processes
+
 # Database initialization - Only run if database doesn't exist or is empty
 if [ ! -f "db.sqlite3" ] || [ ! -s "db.sqlite3" ]; then
     echo "Database not found or empty, initializing..."
@@ -75,20 +104,17 @@ if [ -d "static" ]; then
     echo "Static files permissions set"
 fi
 
-# Setup NoVNC service if it doesn't exist
+# Ensure NoVNC service directory and script exist
 echo "Setting up NoVNC service..."
-if [ ! -d "/etc/service/novncd" ]; then
-    mkdir -p /etc/service/novncd
-    cat > /etc/service/novncd/run << 'EOF'
-#!/bin/sh
-exec 2>&1
-cd /srv/webvirtcloud
-. venv/bin/activate
-exec chpst -u www-data:www-data python /srv/webvirtcloud/console/novncd
-EOF
-    chmod +x /etc/service/novncd/run
-    echo "NoVNC service created"
+if [ ! -d "/etc/service/novnc" ]; then
+    mkdir -p /etc/service/novnc
 fi
+
+# Make sure the novncd script is executable and has proper permissions
+chmod +x /srv/webvirtcloud/console/novncd
+chmod +x /etc/service/novnc/run 2>/dev/null || true
+
+echo "NoVNC service configured"
 
 # SSH Key Management - Only generate if keys don't exist
 if [ ! -f /var/www/.ssh/id_rsa ]; then
@@ -208,4 +234,4 @@ fi
 
 echo "WebVirtCloud initialization complete!"
 
-exec "$@"
+exec "$@""
