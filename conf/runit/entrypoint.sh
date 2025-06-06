@@ -19,6 +19,14 @@ else
     python3 manage.py migrate
 fi
 
+# Fix database file permissions
+echo "Setting database permissions..."
+if [ -f "db.sqlite3" ]; then
+    chown www-data:www-data db.sqlite3
+    chmod 664 db.sqlite3
+    echo "Database permissions set"
+fi
+
 # Static files - Only collect if static directory is empty or missing
 if [ ! -d "static" ] || [ -z "$(ls -A static 2>/dev/null)" ]; then
     echo "Static files not found, collecting..."
@@ -26,6 +34,19 @@ if [ ! -d "static" ] || [ -z "$(ls -A static 2>/dev/null)" ]; then
     echo "Static files collected"
 else
     echo "Static files found, skipping collection"
+fi
+
+# Fix static files and cache directory permissions
+echo "Setting static files permissions..."
+if [ -d "static" ]; then
+    chown -R www-data:www-data static/
+    chmod -R 755 static/
+    
+    # Create and set permissions for icon cache directory
+    mkdir -p static/icon_cache
+    chown www-data:www-data static/icon_cache
+    chmod 755 static/icon_cache
+    echo "Static files permissions set"
 fi
 
 # SSH Key Management - Only generate if keys don't exist
@@ -62,16 +83,24 @@ else
     echo "Existing SSH key found, skipping key generation"
 fi
 
-# Fix logging permissions - Create log file with proper ownership
+# Fix logging permissions and create required log directories
 echo "Setting up logging permissions..."
 touch /srv/webvirtcloud/webvirtcloud.log
 chown www-data:www-data /srv/webvirtcloud/webvirtcloud.log
 chmod 664 /srv/webvirtcloud/webvirtcloud.log
 
-# Ensure the logs directory in mounted volume has proper permissions
+# Ensure the logs directory structure exists with proper permissions
 if [ -d "/var/log" ]; then
+    # Create nginx logs directory
+    mkdir -p /var/log/nginx
+    chown -R www-data:www-data /var/log/nginx
+    chmod -R 755 /var/log/nginx
+    
+    # Create webvirtcloud logs if they don't exist
     chown -R www-data:www-data /var/log/webvirtcloud* 2>/dev/null || true
     chmod -R 664 /var/log/webvirtcloud* 2>/dev/null || true
+    
+    echo "Log directories created and permissions set"
 fi
 
 # Handle CSRF Trusted Origins with support for HTTPS domains
