@@ -66,7 +66,7 @@ VNC_PORT="6080"                  # Replace with desired VNC console port
 HOSTNAME="$(hostname)"           # Or set your hostname manually
 
 # Stop and remove existing container if it exists
-docker stop webvirttest 2>/dev/null && docker rm webvirttest 2>/dev/null
+docker stop webvirtcloud 2>/dev/null && docker rm webvirtcloud 2>/dev/null
 
 # Start the container with your configuration
 docker run -dit \
@@ -81,7 +81,7 @@ docker run -dit \
   -v /dev/pts/:/dev/pts/ \
   -p ${WEB_PORT}:80 \
   -p ${VNC_PORT}:6080 \
-  --name webvirttest \
+  --name webvirtcloud \
   ghcr.io/damianflynn/webvirtcloud:20250606075619
 ```
 
@@ -151,7 +151,7 @@ sudo systemctl restart polkit
 
 ```bash
 # Get the container's SSH public key
-docker exec -it webvirttest sudo -u www-data cat /var/www/.ssh/id_rsa.pub
+docker exec -it webvirtcloud sudo -u www-data cat /var/www/.ssh/id_rsa.pub
 ```
 
 Copy the output (it will look like `ssh-rsa AAAAB3Nza...` or `ssh-ed25519 AAAAC3Nza...`).
@@ -179,10 +179,10 @@ Test the connection from the container to your host:
 
 ```bash
 # Test with dedicated webvirtcloud user (recommended)
-docker exec -it webvirttest sudo -u www-data ssh -o ConnectTimeout=5 webvirtcloud@YOUR_HOST_IP 'virsh -c qemu:///system list --all'
+docker exec -it webvirtcloud sudo -u www-data ssh -o ConnectTimeout=5 webvirtcloud@YOUR_HOST_IP 'virsh -c qemu:///system list --all'
 
 # Test with your personal user
-docker exec -it webvirttest sudo -u www-data ssh -o ConnectTimeout=5 YOUR_USERNAME@YOUR_HOST_IP 'virsh -c qemu:///system list --all'
+docker exec -it webvirtcloud sudo -u www-data ssh -o ConnectTimeout=5 YOUR_USERNAME@YOUR_HOST_IP 'virsh -c qemu:///system list --all'
 ```
 
 If successful, you should see a list of your virtual machines.
@@ -263,11 +263,11 @@ docker run -dit \
   -v /dev/pts/:/dev/pts/ \
   -p ${WEB_PORT}:80 \
   -p ${VNC_PORT}:6080 \
-  --name webvirttest \
+  --name webvirtcloud \
   ghcr.io/damianflynn/webvirtcloud:20250606075619
 
 # 3. Get container's public key
-CONTAINER_KEY=$(docker exec -it webvirttest sudo -u www-data cat /var/www/.ssh/id_rsa.pub)
+CONTAINER_KEY=$(docker exec -it webvirtcloud sudo -u www-data cat /var/www/.ssh/id_rsa.pub)
 
 # 4. Add key to webvirtcloud user
 echo "${CONTAINER_KEY}" | sudo tee -a /home/webvirtcloud/.ssh/authorized_keys
@@ -275,7 +275,7 @@ sudo chmod 600 /home/webvirtcloud/.ssh/authorized_keys
 sudo chown webvirtcloud:webvirtcloud /home/webvirtcloud/.ssh/authorized_keys
 
 # 5. Test connection
-docker exec -it webvirttest sudo -u www-data ssh -o ConnectTimeout=5 webvirtcloud@${HOST_IP} 'virsh -c qemu:///system list --all'
+docker exec -it webvirtcloud sudo -u www-data ssh -o ConnectTimeout=5 webvirtcloud@${HOST_IP} 'virsh -c qemu:///system list --all'
 
 # 6. Access WebVirtCloud at http://192.168.1.100:8080
 ```

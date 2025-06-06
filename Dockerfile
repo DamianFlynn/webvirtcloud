@@ -64,8 +64,5 @@ RUN python3 -m venv venv && \
     chown -R www-data:www-data /var/lib/nginx && \
     chown www-data /srv/webvirtcloud/db.sqlite3 && \
         mkdir -p ~www-data/.ssh && \
-        chown www-data:www-data -R ~www-data && \
-        setuser www-data ssh-keygen -q -N "" -f ~www-data/.ssh/id_rsa && \
-        echo "Host *" > ~www-data/.ssh/config && \
-        echo "StrictHostKeyChecking no" >> ~www-data/.ssh/config && \
-        chown www-data -R ~www-data/.ssh/config
+        chown www-data:www-data -R ~www-data
+        # SSH keys will be generated at runtime via entrypoint
