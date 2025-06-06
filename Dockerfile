@@ -13,7 +13,7 @@ FROM phusion/baseimage:noble-1.0.2
 #   -p 5100:80 \
 #   -p 5180:6080 \
 #   --name webvirttest \
-#   ghcr.io/damianflynn/webvirtcloud:20250605180504
+#   ghcr.io/damianflynn/webvirtcloud:20250606074325
 
 EXPOSE 80 6080
 
@@ -49,20 +49,20 @@ RUN echo 'APT::Get::Clean=always;' >> /etc/apt/apt.conf.d/99AutomaticClean && \
 # Setup webvirtcloud
 WORKDIR /srv/webvirtcloud
 RUN python3 -m venv venv && \
-	. venv/bin/activate && \
-	pip3 install -U pip && \
-	pip3 install wheel && \
-	pip3 install -r conf/requirements.txt && \
-	pip3 cache purge && \
-	chown -R www-data:www-data /srv/webvirtcloud && \
-	python3 manage.py makemigrations && \
+    . venv/bin/activate && \
+    pip3 install -U pip && \
+    pip3 install wheel && \
+    pip3 install -r conf/requirements.txt && \
+    pip3 cache purge && \
+    chown -R www-data:www-data /srv/webvirtcloud && \
+    python3 manage.py makemigrations && \
         python3 manage.py migrate && \
-	python3 manage.py collectstatic --noinput && \
-	chown -R www-data:www-data /srv/webvirtcloud && \
+    python3 manage.py collectstatic --noinput && \
+    chown -R www-data:www-data /srv/webvirtcloud && \
     printf "\n%s" "daemon off;" >> /etc/nginx/nginx.conf && \
-	rm /etc/nginx/sites-enabled/default && \
-	chown -R www-data:www-data /var/lib/nginx && \
-	chown www-data /srv/webvirtcloud/db.sqlite3 && \
+    rm /etc/nginx/sites-enabled/default && \
+    chown -R www-data:www-data /var/lib/nginx && \
+    chown www-data /srv/webvirtcloud/db.sqlite3 && \
         mkdir -p ~www-data/.ssh && \
         chown www-data:www-data -R ~www-data && \
         setuser www-data ssh-keygen -q -N "" -f ~www-data/.ssh/id_rsa && \

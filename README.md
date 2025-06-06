@@ -81,7 +81,47 @@ After making these changes, your WebVirtCloud container should be able to connec
 
 > Connection: qemu+ssh://damian@172.16.1.21/system
 
+## Troubleshooting WebSocket Connection
 
+### Manual WebSocket Configuration Fix
+
+If the environment variables don't take effect, you can manually fix the settings:
+
+```bash
+# Update the WebSocket settings manually
+docker exec -it webvirttest sed -i 's/WS_PUBLIC_HOST = None/WS_PUBLIC_HOST = "172.16.1.21"/' /srv/webvirtcloud/webvirtcloud/settings.py
+docker exec -it webvirttest sed -i 's/WS_PUBLIC_PORT = 6080/WS_PUBLIC_PORT = 5180/' /srv/webvirtcloud/webvirtcloud/settings.py
+
+# Restart the WebVirtCloud service
+docker exec -it webvirttest sv restart webvirtcloud
+docker exec -it webvirttest sv restart novnc
+```
+
+### VNC Console Connection Issues
+
+If you can't connect to the VM console through WebVirtCloud:
+
+1. **Verify VNC configuration:**
+```bash
+# Check VM VNC settings
+virsh dumpxml <vm-name> | grep -A5 -B5 graphics
+virsh vncdisplay <vm-name>
+```
+
+2. **Test VNC connectivity:**
+```bash
+# From host
+nc -zv localhost 5901
+
+# From container
+docker exec -it webvirttest nc -zv 172.16.1.21 5901
+```
+
+3. **Check firewall settings on NixOS:**
+```bash
+# VNC ports should be allowed (already configured in your KVM module)
+sudo iptables -I INPUT -p tcp --dport 5900:5910 -j ACCEPT
+```
 
 ### Warning!!!
 
