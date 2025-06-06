@@ -36,7 +36,7 @@ docker run -dit \
   -p 5100:80 \
   -p 5180:6080 \
   --name webvirttest \
-  ghcr.io/damianflynn/webvirtcloud:20250605180504
+  ghcr.io/damianflynn/webvirtcloud:20250606074325
 ```
 
 ### Set up SSH access using your existing SSH key:
