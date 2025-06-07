@@ -286,7 +286,7 @@ If you encounter issues, check the [Troubleshooting section](#troubleshooting-we
 
 ### Docker Compose
 
-A docker compose file is included in the repo, 
+A docker compose file is included in the repo, this is work in progress
 
 ```bash
 #!/bin/bash
