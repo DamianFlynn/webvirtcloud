@@ -21,8 +21,8 @@ cleanup_processes() {
     # Kill any existing nginx processes
     pkill -f "nginx: master process" 2>/dev/null || true
     
-    # Wait for processes to terminate
-    sleep 3
+    # Wait for processes to terminate and ports to be free
+    sleep 5
     
     echo "Process cleanup complete"
 }
@@ -54,20 +54,83 @@ echo "Collecting static files..."
 python3 manage.py collectstatic --noinput --clear
 echo "Static files collected"
 
-# Verify critical noVNC files exist
-echo "Verifying noVNC files..."
+# Check for critical missing static files and handle them
+echo "Checking for missing static files..."
+
+# Create missing directories if they don't exist
+mkdir -p static/js/novnc/core
+mkdir -p static/js/novnc/app/styles
+mkdir -p static/js/novnc/vendor
+mkdir -p static/fonts
+mkdir -p static/js
+
+# Handle missing noVNC files - these might be in a different location
 if [ ! -f "static/js/novnc/core/rfb.js" ]; then
-    echo "WARNING: rfb.js not found in static files"
+    echo "WARNING: rfb.js not found in expected location"
+    # Try to find it elsewhere and copy
+    find . -name "rfb.js" -not -path "./static/*" | head -1 | while read -r source; do
+        if [ -n "$source" ]; then
+            echo "Found rfb.js at $source, copying to static location"
+            cp "$source" static/js/novnc/core/rfb.js
+        fi
+    done
 fi
 
 if [ ! -f "static/js/novnc/app/styles/lite.css" ]; then
     echo "WARNING: lite.css not found"
-    # Check if base.css exists and can be used
+    # Check if base.css exists and can be used as fallback
     if [ -f "static/js/novnc/app/styles/base.css" ]; then
-        echo "Using base.css instead of lite.css"
-        ln -sf base.css static/js/novnc/app/styles/lite.css
+        echo "Using base.css as lite.css fallback"
+        cp static/js/novnc/app/styles/base.css static/js/novnc/app/styles/lite.css
+    else
+        echo "Creating minimal lite.css"
+        cat > static/js/novnc/app/styles/lite.css << 'EOF'
+/* Minimal noVNC lite styles */
+.noVNC_canvas {
+    width: 100%;
+    height: 100%;
+}
+EOF
     fi
 fi
+
+if [ ! -f "static/js/novnc/vendor/promise.js" ]; then
+    echo "WARNING: promise.js not found"
+    # Create a minimal promise polyfill if needed
+    echo "Creating minimal promise.js stub"
+    cat > static/js/novnc/vendor/promise.js << 'EOF'
+// Minimal Promise polyfill stub
+if (typeof Promise === 'undefined') {
+    window.Promise = window.Promise || function() {};
+}
+EOF
+fi
+
+# Handle missing Chart.js
+if [ ! -f "static/js/Chart.bundle.min.js" ]; then
+    echo "WARNING: Chart.bundle.min.js not found"
+    # Try to find it
+    find . -name "Chart.bundle.min.js" -not -path "./static/*" | head -1 | while read -r source; do
+        if [ -n "$source" ]; then
+            echo "Found Chart.bundle.min.js at $source, copying to static location"
+            cp "$source" static/js/Chart.bundle.min.js
+        fi
+    done
+fi
+
+# Handle missing Bootstrap icons
+if [ ! -f "static/fonts/bootstrap-icons.woff2" ]; then
+    echo "WARNING: Bootstrap icon fonts not found"
+    # Try to find them
+    find . -name "bootstrap-icons.woff*" -not -path "./static/*" | while read -r source; do
+        if [ -n "$source" ]; then
+            echo "Found bootstrap icon font at $source, copying to static location"
+            cp "$source" static/fonts/
+        fi
+    done
+fi
+
+echo "Static file check completed"
 
 # Fix static files and cache directory permissions
 echo "Setting static files permissions..."
@@ -210,16 +273,30 @@ if [ -n "$DEBUG" ]; then
     sed -i "s|DEBUG = False|DEBUG = ${DEBUG}|" webvirtcloud/settings.py
 fi
 
-# Test Django configuration
+# Test Django configuration and wait for database to be ready
 echo "Testing Django configuration..."
-if python3 manage.py check --deploy 2>/dev/null; then
-    echo "Django configuration is valid"
-else
-    echo "Warning: Django configuration issues detected, but continuing..."
-    python3 manage.py check --deploy || true
-fi
+max_attempts=5
+attempt=0
+while [ $attempt -lt $max_attempts ]; do
+    if python3 manage.py check --deploy 2>/dev/null; then
+        echo "Django configuration is valid"
+        break
+    else
+        attempt=$((attempt + 1))
+        echo "Django configuration check failed (attempt $attempt/$max_attempts)"
+        if [ $attempt -lt $max_attempts ]; then
+            echo "Retrying in 10 seconds..."
+            sleep 10
+        else
+            echo "Warning: Django configuration issues detected, but continuing..."
+            python3 manage.py check --deploy || true
+        fi
+    fi
+done
 
 echo "WebVirtCloud initialization complete!"
+echo "Waiting a moment for cleanup to finish..."
+sleep 5
 echo "Runit will now start the services..."
 
 # Create a marker file to indicate initialization is complete

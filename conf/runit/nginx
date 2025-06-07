@@ -1,9 +1,92 @@
 #!/bin/bash
-set -e
-if [[ ! -e /var/log/nginx/error.log ]]; then
-	# The Nginx log forwarder might be sleeping and waiting
-	# until the error log becomes available. We restart it in
-	# 1 second so that it picks up the new log file quickly.
-	(sleep 1 && sv restart /etc/service/nginx-log-forwarder)
+exec 2>&1
+
+# Function to cleanup any existing nginx processes
+cleanup_nginx_processes() {
+    echo "Cleaning up any existing nginx processes..."
+    
+    # Find and kill any existing nginx processes
+    local pids=$(pgrep -f "nginx: master process" 2>/dev/null)
+    if [ -n "$pids" ]; then
+        echo "Found existing nginx processes: $pids"
+        kill -TERM $pids 2>/dev/null
+        sleep 3
+        
+        # Force kill if still running
+        local remaining=$(pgrep -f "nginx: master process" 2>/dev/null)
+        if [ -n "$remaining" ]; then
+            echo "Force killing remaining nginx processes: $remaining"
+            kill -KILL $remaining 2>/dev/null || true
+            sleep 2
+        fi
+    else
+        echo "No existing nginx processes found"
+    fi
+}
+
+# Function to wait for processes using ports to stop
+wait_for_port_free() {
+    local port=$1
+    local max_wait=30
+    local wait_time=0
+    
+    echo "Waiting for port $port to be free..."
+    while netstat -tln | grep -q ":$port " && [ $wait_time -lt $max_wait ]; do
+        echo "Port $port still in use, waiting..."
+        sleep 2
+        wait_time=$((wait_time + 2))
+    done
+    
+    if [ $wait_time -ge $max_wait ]; then
+        echo "Warning: Port $port still in use after ${max_wait}s"
+        # Try to find and kill processes using the port
+        local pid=$(lsof -ti:$port 2>/dev/null)
+        if [ -n "$pid" ]; then
+            echo "Killing process $pid using port $port"
+            kill -TERM $pid 2>/dev/null || true
+            sleep 2
+        fi
+    else
+        echo "Port $port is now free"
+    fi
+}
+
+echo "Starting Nginx service..."
+
+# Clean up any existing nginx processes
+cleanup_nginx_processes
+
+# Wait for ports to be free
+wait_for_port_free 80
+
+# Test nginx configuration
+echo "Testing nginx configuration..."
+if ! nginx -t; then
+    echo "ERROR: Nginx configuration test failed!"
+    echo "Nginx configuration content:"
+    cat /etc/nginx/conf.d/webvirtcloud.conf
+    echo "Main nginx.conf:"
+    cat /etc/nginx/nginx.conf
+    exit 1
 fi
-exec /usr/sbin/nginx
+
+echo "Nginx configuration test passed"
+
+# Ensure log directories exist with proper permissions
+mkdir -p /var/log/nginx
+chown -R www-data:www-data /var/log/nginx
+chmod 755 /var/log/nginx
+
+# Ensure nginx runtime directories exist
+mkdir -p /var/lib/nginx/body
+mkdir -p /var/lib/nginx/fastcgi
+mkdir -p /var/lib/nginx/proxy
+mkdir -p /var/lib/nginx/scgi
+mkdir -p /var/lib/nginx/uwsgi
+chown -R www-data:www-data /var/lib/nginx
+
+# Remove any stale pid files
+rm -f /var/run/nginx.pid
+
+echo "Starting nginx in foreground mode..."
+exec nginx -g "daemon off;"
