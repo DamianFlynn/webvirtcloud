@@ -60,19 +60,22 @@ services:
       # Internal WebSocket Configuration
       - WS_HOST=0.0.0.0
       - WS_PORT=6080
+      
+      # URL configuration for proper routing
+      - ALLOWED_HOSTS=vms.deercrest.info,localhost,127.0.0.1
 
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:80/"]
+      test: ["CMD-SHELL", "curl -f http://localhost:80/ || exit 1"]
       interval: 30s
       timeout: 10s
-      retries: 3
-      start_period: 40s
+      retries: 5
+      start_period: 180s
 
     labels:
       # Enable Traefik
       - traefik.enable=true
       
-      # Main WebVirtCloud Web Interface
+      # Main WebVirtCloud Web Interface (catch-all, lower priority)
       - traefik.http.routers.webvirtcloud-web.entrypoints=websecure
       - traefik.http.routers.webvirtcloud-web.rule=Host(`vms.deercrest.info`)
       - traefik.http.routers.webvirtcloud-web.middlewares=chain-authelia@file
@@ -89,4 +92,12 @@ services:
       - traefik.http.routers.webvirtcloud-vnc.tls=true
       - traefik.http.routers.webvirtcloud-vnc.tls.certresolver=dns-cloudflare
       - traefik.http.routers.webvirtcloud-vnc.priority=10
-      - traefik.http.services.webvirtcloud-vnc.loadbalancer.server.port=6080      
+      - traefik.http.services.webvirtcloud-vnc.loadbalancer.server.port=6080
+      
+      # HTTP to HTTPS redirect
+      - traefik.http.routers.webvirtcloud-web-insecure.entrypoints=web
+      - traefik.http.routers.webvirtcloud-web-insecure.rule=Host(`vms.deercrest.info`)
+      - traefik.http.routers.webvirtcloud-web-insecure.middlewares=redirect-to-https@file
+      
+      # Force Traefik to check for service updates
+      - traefik.docker.network=t3_proxy

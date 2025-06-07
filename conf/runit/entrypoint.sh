@@ -58,10 +58,6 @@ echo "Static files collected"
 echo "Verifying noVNC files..."
 if [ ! -f "static/js/novnc/core/rfb.js" ]; then
     echo "WARNING: rfb.js not found in static files"
-    # Try to find it in the source and copy manually
-    if [ -f "static/js/novnc/core/rfb.js" ]; then
-        echo "Found rfb.js, copying to correct location"
-    fi
 fi
 
 if [ ! -f "static/js/novnc/app/styles/lite.css" ]; then
@@ -73,10 +69,6 @@ if [ ! -f "static/js/novnc/app/styles/lite.css" ]; then
     fi
 fi
 
-# List static directory structure for debugging
-echo "Static directory structure:"
-find static/js/novnc -type f -name "*.js" -o -name "*.css" | head -20
-
 # Fix static files and cache directory permissions
 echo "Setting static files permissions..."
 if [ -d "static" ]; then
@@ -87,12 +79,6 @@ if [ -d "static" ]; then
     mkdir -p static/icon_cache
     chown www-data:www-data static/icon_cache
     chmod 755 static/icon_cache
-    
-    # Ensure noVNC static files have proper permissions
-    if [ -d "static/js" ]; then
-        chmod -R 644 static/js/*.js 2>/dev/null || true
-        chmod -R 644 static/css/*.css 2>/dev/null || true
-    fi
     
     echo "Static files permissions set"
 fi
@@ -149,10 +135,6 @@ if [ -d "/var/log" ]; then
     chown -R www-data:www-data /var/log/nginx
     chmod -R 755 /var/log/nginx
     
-    # Create webvirtcloud logs if they don't exist
-    chown -R www-data:www-data /var/log/webvirtcloud* 2>/dev/null || true
-    chmod -R 664 /var/log/webvirtcloud* 2>/dev/null || true
-    
     echo "Log directories created and permissions set"
 fi
 
@@ -177,6 +159,16 @@ if [ -n "$CURRENT_IP" ]; then
     
     sed -i "s|CSRF_TRUSTED_ORIGINS.*|CSRF_TRUSTED_ORIGINS = ${CSRF_ORIGINS}|" webvirtcloud/settings.py
     echo "CSRF origins configured: $CSRF_ORIGINS"
+fi
+
+# Handle ALLOWED_HOSTS environment variable - FIXED VERSION
+if [ -n "$ALLOWED_HOSTS" ]; then
+    echo "Configuring allowed hosts: $ALLOWED_HOSTS"
+    # Convert comma-separated list to Python list format - escape single quotes properly
+    HOSTS_LIST=$(echo "$ALLOWED_HOSTS" | sed "s/,/', '/g" | sed "s/^/['/" | sed "s/$/']/" )
+    # Use | delimiter to avoid conflicts with slashes in the replacement
+    sed -i "s|ALLOWED_HOSTS = \[\]|ALLOWED_HOSTS = ${HOSTS_LIST}|" webvirtcloud/settings.py
+    echo "Allowed hosts configured: $HOSTS_LIST"
 fi
 
 # Handle WebSocket Public Host
@@ -218,7 +210,21 @@ if [ -n "$DEBUG" ]; then
     sed -i "s|DEBUG = False|DEBUG = ${DEBUG}|" webvirtcloud/settings.py
 fi
 
+# Test Django configuration
+echo "Testing Django configuration..."
+if python3 manage.py check --deploy 2>/dev/null; then
+    echo "Django configuration is valid"
+else
+    echo "Warning: Django configuration issues detected, but continuing..."
+    python3 manage.py check --deploy || true
+fi
+
 echo "WebVirtCloud initialization complete!"
+echo "Runit will now start the services..."
+
+# Create a marker file to indicate initialization is complete
+touch /tmp/webvirtcloud-initialized
+
 echo "Services will be started by runit..."
 
 exec "$@"
