@@ -221,4 +221,4 @@ fi
 echo "WebVirtCloud initialization complete!"
 echo "Services will be started by runit..."
 
-exec "$@""
+exec "$@"
