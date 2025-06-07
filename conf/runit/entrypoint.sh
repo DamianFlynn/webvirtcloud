@@ -8,33 +8,20 @@ cd /srv/webvirtcloud
 # Activate virtual environment
 . venv/bin/activate
 
-# Function to check if port is in use
-check_port() {
-    netstat -tuln 2>/dev/null | grep -q ":$1 " && return 0 || return 1
-}
-
-# Function to cleanup any existing processes
+# Function to cleanup any existing processes (but NOT WebSocket processes)
 cleanup_processes() {
-    echo "Cleaning up any existing WebVirtCloud processes..."
+    echo "Cleaning up any existing WebVirtCloud web processes..."
     
-    # Kill any existing gunicorn processes
+    # Kill any existing gunicorn processes only
     pkill -f "gunicorn.*webvirtcloud" 2>/dev/null || true
     
-    # Kill any existing novncd processes
-    pkill -f "console/novncd" 2>/dev/null || true
-    
     # Wait a moment for processes to terminate
-    sleep 3
+    sleep 2
     
-    # Clean up ports if still in use
-    local web_port=${WS_PORT:-6080}
-    if check_port $web_port; then
-        echo "Forcefully cleaning up port $web_port"
-        lsof -ti:$web_port 2>/dev/null | xargs kill -9 2>/dev/null || true
-    fi
+    echo "Web process cleanup complete"
 }
 
-# Cleanup any existing processes first
+# Cleanup any existing web processes first (not WebSocket)
 cleanup_processes
 
 # Database initialization - Only run if database doesn't exist or is empty
@@ -233,5 +220,6 @@ if [ -n "$DEBUG" ]; then
 fi
 
 echo "WebVirtCloud initialization complete!"
+echo "Services will be started by runit..."
 
 exec "$@"
