@@ -286,7 +286,53 @@ If you encounter issues, check the [Troubleshooting section](#troubleshooting-we
 
 ### Docker Compose
 
-A docker compose file is included in the repo, this is work in progress
+A docker compose file is included in the repo.
+
+The main issues we resolved were:
+
+1. Nginx duplicate daemon directive: The Dockerfile was appending daemon off; to nginx.conf, but there was already a daemon directive, causing conflicts
+2. Missing static files: Enhanced the entrypoint script to handle missing noVNC and other static files gracefully
+3. Port conflicts: Added proper process cleanup and port waiting logic
+4. Health check issues: Fixed the Docker health check command syntax
+5. Service startup ordering: Improved the initialization sequence to ensure proper service startup
+
+
+#### Key Changes Made
+
+`Dockerfile`
+
+* Removed the duplicate daemon off; directive that was being appended to nginx.conf
+nginx
+* Added cleanup of existing daemon directives before starting nginx
+* Enhanced port conflict detection and resolution
+* Better error handling and logging
+
+`entrypoint.sh`
+
+* Improved static file handling with fallbacks for missing files
+* Better process cleanup with longer wait times
+* Enhanced ALLOWED_HOSTS configuration handling
+
+`docker-compose.yml`
+
+* Fixed health check syntax
+* Added proper network configuration for Traefik
+* Increased startup time allowances
+
+#### Final Configuration
+
+The container is now properly:
+
+✅ Starting nginx without daemon directive conflicts
+✅ Serving the web interface on port 80
+✅ Running noVNC WebSocket service on port 6080
+✅ Handling missing static files gracefully
+✅ Passing health checks
+✅ Registering with Traefik (if configured)
+
+Our WebVirtCloud installation should now be fully functional with proper VM management capabilities and console access through the web interface.
+
+
 
 ```bash
 #!/bin/bash
