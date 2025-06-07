@@ -49,7 +49,6 @@ RUN python3 -m venv venv && \
     # Ensure novncd script is executable
     chmod +x /srv/webvirtcloud/console/novncd && \
     chown -R www-data:www-data /srv/webvirtcloud && \
-    printf "\n%s" "daemon off;" >> /etc/nginx/nginx.conf && \
     rm /etc/nginx/sites-enabled/default && \
     chown -R www-data:www-data /var/lib/nginx && \
     chown -R www-data:www-data ~www-data && \

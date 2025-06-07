@@ -59,6 +59,15 @@ cleanup_nginx_processes
 # Wait for ports to be free
 wait_for_port_free 80
 
+# Fix nginx.conf to remove any duplicate daemon directives
+echo "Fixing nginx configuration for daemon directive..."
+if [ -f /etc/nginx/nginx.conf ]; then
+    # Remove any existing daemon directives first
+    sed -i '/^daemon /d' /etc/nginx/nginx.conf
+    # Remove the daemon directive that was appended at the end
+    sed -i '/^daemon off;$/d' /etc/nginx/nginx.conf
+fi
+
 # Test nginx configuration
 echo "Testing nginx configuration..."
 if ! nginx -t; then
