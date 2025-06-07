@@ -8,20 +8,26 @@ cd /srv/webvirtcloud
 # Activate virtual environment
 . venv/bin/activate
 
-# Function to cleanup any existing processes (but NOT WebSocket processes)
+# Function to cleanup any existing web processes
 cleanup_processes() {
-    echo "Cleaning up any existing WebVirtCloud web processes..."
+    echo "Cleaning up any existing processes..."
     
-    # Kill any existing gunicorn processes only
+    # Kill any existing gunicorn processes
     pkill -f "gunicorn.*webvirtcloud" 2>/dev/null || true
     
-    # Wait a moment for processes to terminate
-    sleep 2
+    # Kill any existing novncd processes
+    pkill -f "console/novncd" 2>/dev/null || true
     
-    echo "Web process cleanup complete"
+    # Kill any existing nginx processes
+    pkill -f "nginx: master process" 2>/dev/null || true
+    
+    # Wait for processes to terminate
+    sleep 3
+    
+    echo "Process cleanup complete"
 }
 
-# Cleanup any existing web processes first (not WebSocket)
+# Cleanup any existing processes first
 cleanup_processes
 
 # Database initialization - Only run if database doesn't exist or is empty
@@ -91,16 +97,9 @@ if [ -d "static" ]; then
     echo "Static files permissions set"
 fi
 
-# Ensure NoVNC service directory and script exist
+# Ensure NoVNC service script exists and is executable
 echo "Setting up NoVNC service..."
-if [ ! -d "/etc/service/novnc" ]; then
-    mkdir -p /etc/service/novnc
-fi
-
-# Make sure the novncd script is executable and has proper permissions
 chmod +x /srv/webvirtcloud/console/novncd
-chmod +x /etc/service/novnc/run 2>/dev/null || true
-
 echo "NoVNC service configured"
 
 # SSH Key Management - Only generate if keys don't exist
@@ -222,4 +221,4 @@ fi
 echo "WebVirtCloud initialization complete!"
 echo "Services will be started by runit..."
 
-exec "$@"
+exec "$@""
