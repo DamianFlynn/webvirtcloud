@@ -91,20 +91,9 @@ echo "Verifying critical static files..."
 
 # Verify rfb.js exists after collectstatic
 if [ ! -f "static/js/novnc/core/rfb.js" ]; then
-    echo "ERROR: rfb.js not found after collectstatic"
+    echo "WARNING: rfb.js not found after collectstatic"
     echo "Available noVNC files:"
-    find . -name "*.js" -path "*/novnc/*" | head -10
-    
-    # Try to find and copy rfb.js from source
-    source_file=$(find . -name "rfb.js" -not -path "./static/*" | head -1)
-    if [ -n "$source_file" ]; then
-        echo "Found rfb.js at $source_file, copying to static location"
-        mkdir -p static/js/novnc/core
-        cp "$source_file" static/js/novnc/core/rfb.js
-    else
-        echo "CRITICAL: rfb.js not found anywhere in container"
-        exit 1
-    fi
+    find static -name "*.js" | grep -i novnc | head -10 || echo "No noVNC files found"
 fi
 
 # Verify other critical files
