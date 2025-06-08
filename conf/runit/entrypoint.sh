@@ -30,22 +30,52 @@ cleanup_processes() {
 # Cleanup any existing processes first
 cleanup_processes
 
-# Database initialization - Only run if database doesn't exist or is empty
-if [ ! -f "db.sqlite3" ] || [ ! -s "db.sqlite3" ]; then
+# Database Configuration
+# Check if DATABASE_PATH environment variable is set, otherwise use default
+DB_PATH="${DATABASE_PATH:-/srv/webvirtcloud/db.sqlite3}"
+DB_DIR="$(dirname "$DB_PATH")"
+
+echo "Database path: $DB_PATH"
+echo "Database directory: $DB_DIR"
+
+# Ensure database directory exists and has proper permissions
+echo "Setting up database directory..."
+mkdir -p "$DB_DIR"
+chown -R www-data:www-data "$DB_DIR"
+chmod 755 "$DB_DIR"
+
+# Update Django settings to use the correct database path
+if [ "$DATABASE_PATH" != "/srv/webvirtcloud/db.sqlite3" ]; then
+    echo "Updating Django settings for custom database path..."
+    sed -i "s|'NAME': BASE_DIR / 'db.sqlite3'|'NAME': '$DB_PATH'|g" /srv/webvirtcloud/webvirtcloud/settings.py
+fi
+
+# Database initialization - Check if database exists and is accessible
+if [ ! -f "$DB_PATH" ] || [ ! -s "$DB_PATH" ]; then
     echo "Database not found or empty, initializing..."
     python3 manage.py makemigrations
     python3 manage.py migrate
     echo "Database initialized"
 else
-    echo "Existing database found, running migrations..."
-    python3 manage.py migrate
+    echo "Existing database found, checking accessibility..."
+    # Test database accessibility
+    if python3 manage.py migrate --check 2>/dev/null; then
+        echo "Database is accessible, running migrations..."
+        python3 manage.py migrate
+    else
+        echo "Database not accessible, fixing permissions and reinitializing..."
+        rm -f "$DB_PATH"
+        python3 manage.py makemigrations
+        python3 manage.py migrate
+        echo "Database reinitialized"
+    fi
 fi
 
-# Fix database file permissions
+# Fix database file permissions after creation/migration
 echo "Setting database permissions..."
-if [ -f "db.sqlite3" ]; then
-    chown www-data:www-data db.sqlite3
-    chmod 664 db.sqlite3
+if [ -f "$DB_PATH" ]; then
+    chown www-data:www-data "$DB_PATH"
+    chmod 664 "$DB_PATH"
     echo "Database permissions set"
 fi
 
