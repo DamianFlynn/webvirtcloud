@@ -68,12 +68,16 @@ mkdir -p static/js
 if [ ! -f "static/js/novnc/core/rfb.js" ]; then
     echo "WARNING: rfb.js not found in expected location"
     # Try to find it elsewhere and copy
-    find . -name "rfb.js" -not -path "./static/*" | head -1 | while read -r source; do
-        if [ -n "$source" ]; then
-            echo "Found rfb.js at $source, copying to static location"
-            cp "$source" static/js/novnc/core/rfb.js
-        fi
-    done
+    source_file=$(find . -name "rfb.js" -not -path "./static/*" | head -1)
+    if [ -n "$source_file" ]; then
+        echo "Found rfb.js at $source_file, copying to static location"
+        cp "$source_file" static/js/novnc/core/rfb.js
+    else
+        echo "ERROR: rfb.js not found anywhere in the container"
+        # List what we do have
+        echo "Available noVNC files:"
+        find . -name "*.js" -path "*/novnc/*" | head -10
+    fi
 fi
 
 if [ ! -f "static/js/novnc/app/styles/lite.css" ]; then
@@ -110,12 +114,11 @@ fi
 if [ ! -f "static/js/Chart.bundle.min.js" ]; then
     echo "WARNING: Chart.bundle.min.js not found"
     # Try to find it
-    find . -name "Chart.bundle.min.js" -not -path "./static/*" | head -1 | while read -r source; do
-        if [ -n "$source" ]; then
-            echo "Found Chart.bundle.min.js at $source, copying to static location"
-            cp "$source" static/js/Chart.bundle.min.js
-        fi
-    done
+    chart_file=$(find . -name "Chart.bundle.min.js" -not -path "./static/*" | head -1)
+    if [ -n "$chart_file" ]; then
+        echo "Found Chart.bundle.min.js at $chart_file, copying to static location"
+        cp "$chart_file" static/js/Chart.bundle.min.js
+    fi
 fi
 
 # Handle missing Bootstrap icons

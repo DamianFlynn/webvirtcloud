@@ -92,7 +92,7 @@ services:
       - traefik.http.routers.webvirtcloud-vnc.tls=true
       - traefik.http.routers.webvirtcloud-vnc.tls.certresolver=dns-cloudflare
       - traefik.http.routers.webvirtcloud-vnc.priority=10
-      - traefik.http.services.webvirtcloud-vnc.loadbalancer.server.port=80
+      - traefik.http.services.webvirtcloud-vnc.loadbalancer.server.port=6080
       
       # HTTP to HTTPS redirect
       - traefik.http.routers.webvirtcloud-web-insecure.entrypoints=web
