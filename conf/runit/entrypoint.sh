@@ -51,89 +51,44 @@ fi
 
 # Static files - Always collect to ensure noVNC files are present
 echo "Collecting static files..."
+# Remove any existing static files first to ensure clean state
+rm -rf static/*
 python3 manage.py collectstatic --noinput --clear
 echo "Static files collected"
 
 # Check for critical missing static files and handle them
-echo "Checking for missing static files..."
+echo "Verifying critical static files..."
 
-# Create missing directories if they don't exist
-mkdir -p static/js/novnc/core
-mkdir -p static/js/novnc/app/styles
-mkdir -p static/js/novnc/vendor
-mkdir -p static/fonts
-mkdir -p static/js
-
-# Handle missing noVNC files - these might be in a different location
+# Verify rfb.js exists after collectstatic
 if [ ! -f "static/js/novnc/core/rfb.js" ]; then
-    echo "WARNING: rfb.js not found in expected location"
-    # Try to find it elsewhere and copy
+    echo "ERROR: rfb.js not found after collectstatic"
+    echo "Available noVNC files:"
+    find . -name "*.js" -path "*/novnc/*" | head -10
+    
+    # Try to find and copy rfb.js from source
     source_file=$(find . -name "rfb.js" -not -path "./static/*" | head -1)
     if [ -n "$source_file" ]; then
         echo "Found rfb.js at $source_file, copying to static location"
+        mkdir -p static/js/novnc/core
         cp "$source_file" static/js/novnc/core/rfb.js
     else
-        echo "ERROR: rfb.js not found anywhere in the container"
-        # List what we do have
-        echo "Available noVNC files:"
-        find . -name "*.js" -path "*/novnc/*" | head -10
+        echo "CRITICAL: rfb.js not found anywhere in container"
+        exit 1
     fi
 fi
 
-if [ ! -f "static/js/novnc/app/styles/lite.css" ]; then
-    echo "WARNING: lite.css not found"
-    # Check if base.css exists and can be used as fallback
-    if [ -f "static/js/novnc/app/styles/base.css" ]; then
-        echo "Using base.css as lite.css fallback"
-        cp static/js/novnc/app/styles/base.css static/js/novnc/app/styles/lite.css
-    else
-        echo "Creating minimal lite.css"
-        cat > static/js/novnc/app/styles/lite.css << 'EOF'
-/* Minimal noVNC lite styles */
-.noVNC_canvas {
-    width: 100%;
-    height: 100%;
-}
-EOF
-    fi
+# Verify other critical files
+missing_files=""
+[ ! -f "static/js/novnc/app/styles/lite.css" ] && missing_files="$missing_files lite.css"
+[ ! -f "static/js/Chart.bundle.min.js" ] && missing_files="$missing_files Chart.bundle.min.js"
+[ ! -f "static/fonts/bootstrap-icons.woff2" ] && missing_files="$missing_files bootstrap-icons.woff2"
+
+if [ -n "$missing_files" ]; then
+    echo "WARNING: Missing static files: $missing_files"
+    echo "These files may cause UI issues but won't prevent startup"
 fi
 
-if [ ! -f "static/js/novnc/vendor/promise.js" ]; then
-    echo "WARNING: promise.js not found"
-    # Create a minimal promise polyfill if needed
-    echo "Creating minimal promise.js stub"
-    cat > static/js/novnc/vendor/promise.js << 'EOF'
-// Minimal Promise polyfill stub
-if (typeof Promise === 'undefined') {
-    window.Promise = window.Promise || function() {};
-}
-EOF
-fi
-
-# Handle missing Chart.js
-if [ ! -f "static/js/Chart.bundle.min.js" ]; then
-    echo "WARNING: Chart.bundle.min.js not found"
-    # Try to find it
-    chart_file=$(find . -name "Chart.bundle.min.js" -not -path "./static/*" | head -1)
-    if [ -n "$chart_file" ]; then
-        echo "Found Chart.bundle.min.js at $chart_file, copying to static location"
-        cp "$chart_file" static/js/Chart.bundle.min.js
-    fi
-fi
-
-# Handle missing Bootstrap icons
-if [ ! -f "static/fonts/bootstrap-icons.woff2" ]; then
-    echo "WARNING: Bootstrap icon fonts not found"
-    # Try to find them
-    find . -name "bootstrap-icons.woff*" -not -path "./static/*" | while read -r source; do
-        if [ -n "$source" ]; then
-            echo "Found bootstrap icon font at $source, copying to static location"
-            cp "$source" static/fonts/
-        fi
-    done
-fi
-
-echo "Static file check completed"
+echo "Static file verification completed"
 
 # Fix static files and cache directory permissions
 echo "Setting static files permissions..."
