@@ -77,7 +77,7 @@ services:
       
       # Main WebVirtCloud Web Interface (catch-all, lower priority)
       - traefik.http.routers.webvirtcloud-web.entrypoints=websecure
-      - traefik.http.routers.webvirtcloud-web.rule=Host(`vms.deercrest.info`)
+      - traefik.http.routers.webvirtcloud-web.rule=Host(`vms.deercrest.info`) && !PathPrefix(`/novncd/`)
       - traefik.http.routers.webvirtcloud-web.middlewares=chain-authelia@file
       - traefik.http.routers.webvirtcloud-web.tls=true
       - traefik.http.routers.webvirtcloud-web.tls.certresolver=dns-cloudflare
@@ -92,7 +92,7 @@ services:
       - traefik.http.routers.webvirtcloud-vnc.tls=true
       - traefik.http.routers.webvirtcloud-vnc.tls.certresolver=dns-cloudflare
       - traefik.http.routers.webvirtcloud-vnc.priority=10
-      - traefik.http.services.webvirtcloud-vnc.loadbalancer.server.port=6080
+      - traefik.http.services.webvirtcloud-vnc.loadbalancer.server.port=80
       
       # HTTP to HTTPS redirect
       - traefik.http.routers.webvirtcloud-web-insecure.entrypoints=web
