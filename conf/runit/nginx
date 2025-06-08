@@ -27,27 +27,33 @@ cleanup_nginx_processes() {
 # Function to wait for processes using ports to stop
 wait_for_port_free() {
     local port=$1
-    local max_wait=30
+    local max_wait=60
     local wait_time=0
     
     echo "Waiting for port $port to be free..."
     while netstat -tln | grep -q ":$port " && [ $wait_time -lt $max_wait ]; do
         echo "Port $port still in use, waiting..."
+        # Try to find and kill processes using the port
+        local pid=$(lsof -ti:$port 2>/dev/null | head -1)
+        if [ -n "$pid" ]; then
+            echo "Killing process $pid using port $port"
+            kill -TERM $pid 2>/dev/null || true
+            sleep 3
+            # Force kill if still running
+            if kill -0 $pid 2>/dev/null; then
+                kill -KILL $pid 2>/dev/null || true
+            fi
+        fi
         sleep 2
-        wait_time=$((wait_time + 2))
+        wait_time=$((wait_time + 5))
     done
     
     if [ $wait_time -ge $max_wait ]; then
         echo "Warning: Port $port still in use after ${max_wait}s"
-        # Try to find and kill processes using the port
-        local pid=$(lsof -ti:$port 2>/dev/null)
-        if [ -n "$pid" ]; then
-            echo "Killing process $pid using port $port"
-            kill -TERM $pid 2>/dev/null || true
-            sleep 2
-        fi
+        return 1
     else
         echo "Port $port is now free"
+        return 0
     fi
 }
 
@@ -56,8 +62,9 @@ echo "Starting Nginx service..."
 # Clean up any existing nginx processes
 cleanup_nginx_processes
 
-# Wait for ports to be free
+# Wait for ports to be free with better cleanup
 wait_for_port_free 80
+wait_for_port_free 6080
 
 # Fix nginx.conf to remove any duplicate daemon directives
 echo "Fixing nginx configuration for daemon directive..."
